@@ -1,0 +1,107 @@
+/* ============================================================
+   global.scss —— 唯一全局样式文件
+   职责：CSS Reset、字体、全局设计变量、主题定义、基础样式。
+   组件样式一律写在各自 SFC 的 <style scoped lang="scss"> 内。
+   主题与运行时动态颜色通过 CSS Variables 管理。
+   ============================================================ */
+
+/* ---------------- 设计变量（亮色主题为默认值） ---------------- */
+
+:root {
+  /* 颜色令牌：UI 设计阶段在此基础上补充与调整 */
+  --koma-bg: #f6f7f9;
+  --koma-surface: #ffffff;
+  --koma-text: #1a1c1e;
+  --koma-text-secondary: #5c5f62;
+  --koma-primary: #3f6df6;
+  --koma-danger: #e5484d;
+
+  /* 字体 */
+  --koma-font: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+
+  /* 形状与层级 */
+  --koma-radius: 12px;
+  --koma-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --koma-bg: #101214;
+    --koma-surface: #1a1d20;
+    --koma-text: #e8eaec;
+    --koma-text-secondary: #9aa0a6;
+    --koma-shadow: 0 1px 3px rgb(0 0 0 / 48%);
+  }
+}
+
+/* ---------------- Reset ---------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--koma-font);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--koma-text);
+  background: var(--koma-bg);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+/* ---------------- 基础工具 ---------------- */
+
+#app {
+  min-height: 100%;
+}
+
+/* 动效偏好：尊重系统设置 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
