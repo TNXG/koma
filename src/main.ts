@@ -1,12 +1,13 @@
 import { createPinia } from "pinia";
-import { createApp } from "vue";
+import { createApp, vaporInteropPlugin } from "vue";
 import App from "@/App.vue";
 import { router } from "./router";
+import "./tailwind.css";
 import "./global.scss";
 
-/* Capacitor 阶段引入原生桥；当前仅保证 Web 基础工程可运行 */
-
+/* 根用 VDOM；自带组件按 <script setup vapor> 编译，interop 插件让两者互嵌 */
 createApp(App)
+  .use(vaporInteropPlugin)
   .use(createPinia())
   .use(router)
   .mount("#app");
