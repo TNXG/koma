@@ -5,6 +5,7 @@ import com.getcapacitor.BridgeActivity
 import moe.tnxg.koma.plugins.EduNativeHttpPlugin
 import moe.tnxg.koma.plugins.KomaCredentialsPlugin
 import moe.tnxg.koma.plugins.KomaNotificationsPlugin
+import moe.tnxg.koma.plugins.KomaOcrPlugin
 
 class MainActivity : BridgeActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -12,6 +13,7 @@ class MainActivity : BridgeActivity() {
         registerPlugin(EduNativeHttpPlugin::class.java)
         registerPlugin(KomaCredentialsPlugin::class.java)
         registerPlugin(KomaNotificationsPlugin::class.java)
+        registerPlugin(KomaOcrPlugin::class.java)
         super.onCreate(savedInstanceState)
     }
 }

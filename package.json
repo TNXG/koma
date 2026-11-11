@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "prebuild": "node scripts/fetch-ocr-model.mjs",
     "typecheck": "vue-tsc -b",
     "lint": "eslint src tests scripts vite.config.ts capacitor.config.ts eslint.config.js index.html package.json tsconfig.json pnpm-workspace.yaml",
     "test": "vitest run",
     "cap:sync": "pnpm run build && cap sync android",
-    "cap:build": "pnpm run cap:sync && node scripts/android-build.mjs"
+    "cap:build": "pnpm run cap:sync && node scripts/android-build.mjs",
+    "fetch:ocr": "node scripts/fetch-ocr-model.mjs"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.1",

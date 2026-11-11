@@ -20,3 +20,8 @@ capacitor.config.json
 
 docs/
 .agents/
+# OCR 验证码模型：首次构建由 scripts/fetch-ocr-model.mjs 下载并校验 sha256
+android/app/src/main/assets/ocr/*.onnx
+# OCR 测试样本（本地采集的验证码像素）：不入库，缺失时相关测试跳过
+android/app/src/test/resources/ocr/
+android/app/src/androidTest/assets/ocr/
