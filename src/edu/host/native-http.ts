@@ -1,6 +1,6 @@
 /**
  * 原生 HTTP 插件的 TS 侧契约（Kotlin 实现见 docs/architecture.md §3.2/§7）：
- * android/app/src/main/java/com/koma/timetable/plugins/EduNativeHttpPlugin.kt
+ * android/app/src/main/java/moe/tnxg/koma/plugins/EduNativeHttpPlugin.kt
  * 必须按这些方法名与参数一一对齐；不跟重定向、保留响应头大小写、Set-Cookie 多值成组。
  */
 

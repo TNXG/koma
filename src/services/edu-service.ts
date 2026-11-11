@@ -10,7 +10,7 @@ import type { Diagnostic } from "@/edu/contracts/protocol";
 import type { EduCookieStore } from "@/edu/host/cookie-store";
 import type { TimetableSnapshot } from "@/types/timetable";
 import { parseWeeksString } from "@/domain/weeks";
-import { createMemoryCookieStore } from "@/edu/host/cookie-store";
+import { createDefaultCookieStore } from "@/edu/host/cookie-store";
 import { createEduHttp } from "@/edu/host/http";
 import { DEFAULT_EDU_PLUGIN, EDU_PLUGINS, getEduPlugin, hasDirectLogin } from "@/edu/registry";
 import { courseIdOf } from "@/types/timetable";
@@ -72,7 +72,7 @@ interface SchoolSession {
 
 export function createEduService(options: EduServiceOptions = {}): EduService {
   const http = options.http ?? createEduHttp();
-  const cookies = options.cookies ?? createMemoryCookieStore();
+  const cookies = options.cookies ?? createDefaultCookieStore();
   /** schoolId → 进行中的登录/导入会话 */
   const sessions = new Map<string, SchoolSession>();
 
