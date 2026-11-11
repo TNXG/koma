@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Koma 课表</title>
+  <desc id="desc">蓝色圆角方形内，四块白色课程卡片组成字母 K。</desc>
+  <rect width="512" height="512" rx="112" fill="#3F6DF6"/>
+  <g fill="#FFFFFF">
+    <rect x="128" y="128" width="72" height="116" rx="22"/>
+    <rect x="128" y="268" width="72" height="116" rx="22"/>
+  </g>
+  <g stroke="#FFFFFF" stroke-width="64" stroke-linecap="round">
+    <path d="M252 220L336 144"/>
+    <path d="M252 292L336 368"/>
+  </g>
+</svg>

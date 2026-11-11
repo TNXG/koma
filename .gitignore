@@ -11,6 +11,11 @@ android/app/build/
 android/app/.cxx/
 android/local.properties
 android/capacitor-cordova-android-plugins/
+android/app/release/
+android/.idea/
+*.jks
+*.keystore
+keystore.properties
 capacitor.config.json
 
 docs/
