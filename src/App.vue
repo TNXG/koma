@@ -1,7 +1,18 @@
-<script setup lang="ts">
-// 根组件：布局与全局容器在 UI 阶段完善，当前只承载路由出口
-</script>
-
 <template>
-  <RouterView />
+  <div class="shell">
+    <RouterView />
+  </div>
 </template>
+
+<style scoped lang="scss">
+.shell {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+  background: var(--c-bg);
+  color: var(--c-ink);
+}
+</style>
