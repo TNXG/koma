@@ -1,6 +1,7 @@
 <script setup lang="ts" vapor>
 import type { DayBlock } from "@/domain/home-timeline";
 import CourseSlot from "@/components/home/course-slot.vue";
+import GapStopRow from "@/components/home/gap-stop.vue";
 import { formatMinutes, formatMonthDay, weekdayLabel } from "@/domain/calendar";
 
 defineProps<{
@@ -17,25 +18,32 @@ defineProps<{
       <span class="day__date" :class="{ 'day__date--lead': !block.relative }" data-morph>
         <b>{{ formatMonthDay(block.date) }}</b> <span>周{{ weekdayLabel(block.date) }}</span>
       </span>
-      <span v-if="block.rows.length" class="day__count" data-fade>
-        {{ block.rows.length }} 节课<template v-if="block.rows[0].start !== null">，{{
-          formatMinutes(block.rows[0].start!) }} 开始</template>
+      <span v-if="block.courses.length" class="day__count" data-fade>
+        {{ block.courses.length }} 站<template v-if="block.courses[0].start !== null">，{{
+          formatMinutes(block.courses[0].start!) }} 发车</template>
       </span>
     </div>
 
-    <div v-if="block.rows.length === 0" class="day__empty">
-      无课
+    <div v-if="block.stops.length === 0" class="day__empty">
+      今天没有课，线路休整中
     </div>
 
-    <CourseSlot
-      v-for="(row, ri) in block.rows"
-      :key="row.course.id"
-      :row="row"
-      :first="ri === 0"
-      :last="ri === block.rows.length - 1"
-      :now-minutes="nowMinutes"
-      :view-is-today="viewIsToday"
-    />
+    <template v-for="(stop, i) in block.stops" :key="stop.kind === 'course' ? stop.course.id : `gap-${stop.start}`">
+      <GapStopRow
+        v-if="stop.kind === 'gap'"
+        :stop="stop"
+        :first="i === 0"
+        :last="i === block.stops.length - 1"
+      />
+      <CourseSlot
+        v-else
+        :row="stop"
+        :first="i === 0"
+        :last="i === block.stops.length - 1"
+        :now-minutes="nowMinutes"
+        :view-is-today="viewIsToday"
+      />
+    </template>
   </section>
 </template>
 
@@ -101,7 +109,7 @@ $day-gap: 28px;
   }
 
   &__empty {
-    padding-top: 6px;
+    padding: 2px 0 6px;
     font-size: 13.5px;
     font-weight: 600;
     color: var(--c-ink4);

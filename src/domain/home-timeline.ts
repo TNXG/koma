@@ -1,6 +1,9 @@
 /**
  * 首页连续时间线的纯计算：课表快照 + 今天/当前分钟 → 可渲染区块，
  * 以及日期 → 锚点、锚点 → 课程数的索引。滚动与 DOM 动画留在页面里。
+ *
+ * 一天的区块是一串「站点」：课程站（两个环形节点夹住卡片）与课间空闲站
+ * （波浪线 + 时长标注），按时间顺序排成一条地铁路线。
  */
 
 import type { TimetableCourse, TimetableSnapshot } from "@/types/timetable";
@@ -16,7 +19,11 @@ import {
 
 export type RowState = "past" | "now" | "next" | "later";
 
+export type GapState = "past" | "now" | "later";
+
+/** 课程站 */
 export interface Row {
+  kind: "course";
   course: TimetableCourse;
   start: number | null;
   end: number | null;
@@ -24,13 +31,27 @@ export interface Row {
   pct: number;
 }
 
+/** 课间空闲站：两节课之间的空档，短于 MIN_GAP_MINUTES 的课间不画站点 */
+export interface GapStop {
+  kind: "gap";
+  start: number;
+  end: number;
+  minutes: number;
+  state: GapState;
+}
+
+export type Stop = Row | GapStop;
+
 export interface DayBlock {
   kind: "day";
   anchor: string;
   date: Date;
   relative: string | null;
   week: number;
-  rows: Row[];
+  /** 按时间顺序的站点序列（课程 + 课间空闲） */
+  stops: Stop[];
+  /** 仅课程站，供计数与文案使用 */
+  courses: Row[];
 }
 
 export interface FreeBlock {
@@ -56,6 +77,44 @@ export interface DaySummary {
 }
 
 const RELATIVE = ["今天", "明天", "后天"];
+/** 小于这个时长的课间不画空闲站，免得每节课之间都冒一条波浪线 */
+export const MIN_GAP_MINUTES = 40;
+
+function gapState(date: Date, today: Date, start: number, end: number, nowMinutes: number): GapState {
+  if (date < today)
+    return "past";
+  if (date > today)
+    return "later";
+  if (end <= nowMinutes)
+    return "past";
+  return start <= nowMinutes
+    ? "now"
+    : "later";
+}
+
+/** 课程站之间插入空闲站；缺作息时间（start/end 为 null）的课不参与 */
+function withGaps(rows: Row[], date: Date, today: Date, nowMinutes: number): Stop[] {
+  const stops: Stop[] = [];
+  rows.forEach((row, i) => {
+    const prev = rows[i - 1];
+    if (
+      prev
+      && prev.end !== null
+      && row.start !== null
+      && row.start - prev.end >= MIN_GAP_MINUTES
+    ) {
+      stops.push({
+        kind: "gap",
+        start: prev.end,
+        end: row.start,
+        minutes: row.start - prev.end,
+        state: gapState(date, today, prev.end, row.start, nowMinutes),
+      });
+    }
+    stops.push(row);
+  });
+  return stops;
+}
 
 /** 整学期逐日展开；有课或每周一生成日期区块，连续无课合并成一块 */
 export function buildTimeline(
@@ -67,7 +126,7 @@ export function buildTimeline(
   const termStart = parseLocalDate(startDate);
   const totalDays = daysBetween(termStart, addDays(termStart, snapshot.semester.totalWeeks * 7 - 1)) + 1;
   const out: Block[] = [];
-  const rowsByDay = new Map<string, Row[]>();
+  const stopsByDay = new Map<string, DayBlock & { relative: string | null }>();
   let nextMarked = false;
 
   for (let offset = 0; offset < totalDays; offset++) {
@@ -80,39 +139,42 @@ export function buildTimeline(
         ? date < today
         : item.end !== null && item.end <= nowMinutes;
       if (past)
-        return { ...item, state: "past", pct: 100 };
+        return { ...item, kind: "course", state: "past", pct: 100 };
       if (isToday && item.start !== null && item.start <= nowMinutes)
-        return { ...item, state: "now", pct: (nowMinutes - item.start) / Math.max(1, (item.end ?? item.start) - item.start) * 100 };
+        return { ...item, kind: "course", state: "now", pct: (nowMinutes - item.start) / Math.max(1, (item.end ?? item.start) - item.start) * 100 };
       if (!nextMarked && isToday) {
         nextMarked = true;
-        return { ...item, state: "next", pct: 0 };
+        return { ...item, kind: "course", state: "next", pct: 0 };
       }
-      return { ...item, state: "later", pct: 0 };
+      return { ...item, kind: "course", state: "later", pct: 0 };
     });
-    rowsByDay.set(iso, rows);
+    stopsByDay.set(iso, {
+      kind: "day",
+      anchor: iso,
+      date,
+      relative: null,
+      week: Math.floor(offset / 7) + 1,
+      stops: withGaps(rows, date, today, nowMinutes),
+      courses: rows,
+    });
   }
 
   for (let offset = 0; offset < totalDays; offset++) {
     const date = addDays(termStart, offset);
     const iso = toIsoDate(date);
-    const rows = rowsByDay.get(iso)!;
+    const day = stopsByDay.get(iso)!;
     const dayOfWeek = isoWeekday(date);
-    const weekNo = Math.floor(offset / 7) + 1;
 
     if (dayOfWeek === 1)
-      out.push({ kind: "week", anchor: iso, week: weekNo });
+      out.push({ kind: "week", anchor: iso, week: day.week });
 
-    if (rows.length > 0 || dayOfWeek === 1) {
+    if (day.courses.length > 0 || dayOfWeek === 1) {
       const diff = daysBetween(today, date);
       out.push({
-        kind: "day",
-        anchor: iso,
-        date,
+        ...day,
         relative: diff >= 0 && diff < RELATIVE.length
           ? RELATIVE[diff]
           : null,
-        week: weekNo,
-        rows,
       });
       continue;
     }
@@ -151,12 +213,12 @@ export function blockAnchors(blocks: Block[]): Map<string, string> {
   return map;
 }
 
-/** 有课日期 → 课程数，供日期条角标使用 */
+/** 有课日期 → 课程数，供日期岛角标使用 */
 export function countCoursesByDay(blocks: Block[]): Map<string, number> {
   const map = new Map<string, number>();
   for (const block of blocks) {
     if (block.kind === "day")
-      map.set(block.anchor, block.rows.length);
+      map.set(block.anchor, block.courses.length);
   }
   return map;
 }
