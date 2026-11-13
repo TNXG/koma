@@ -86,14 +86,18 @@
 
 ## 自己打包
 
-在仓库根目录执行：
+先装 [mise](https://mise.jdx.dev)，然后在仓库根目录执行：
 
 ```sh
+mise trust
+mise install
 mise run setup
 mise run build
 ```
 
-产物在 `app/build/outputs/apk/debug/app-debug.apk`，传到手机安装即可。
+Windows、macOS、Linux 用同一套命令。`mise run setup` 按平台分派：macOS / Linux 走 `tools/setup.sh`，Windows 走 `tools/setup.ps1`，装好 Android SDK（API 37、Build Tools 36.0.0 与 37.0.0、platform-tools）并按 SHA-256 校验 OCR 模型；Windows 只需要系统自带的 PowerShell，不用 WSL 或 Git Bash。
+
+产物在 `app/build/outputs/apk/debug/app-debug.apk`，传到手机安装即可；连了设备也可以直接 `mise run run` 装上并启动。
 
 ## 反馈与源码
 

@@ -11,6 +11,7 @@ import okhttp3.HttpUrl
 import java.io.File
 import java.io.IOException
 import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.security.KeyStore
@@ -37,6 +38,8 @@ internal class CookieVault(
     private val cookies = mutableListOf<Cookie>()
     private val json = Json { ignoreUnknownKeys = true }
     private val aad = "koma.education.cookies.v1".toByteArray()
+    // Android and macOS expose POSIX permission bits; Windows cannot tighten them and always reports failure.
+    private val posixPermissions = FileSystems.getDefault().supportedFileAttributeViews().contains("posix")
     init { load() }
 
     @Synchronized override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
@@ -93,8 +96,8 @@ internal class CookieVault(
         val encrypted = byteArrayOf(1) + cipher.iv + cipher.doFinal(json.encodeToString(values).toByteArray())
         val temp = File.createTempFile("edu-cookies-", ".tmp", parent)
         try {
-            if (!temp.setReadable(false, false) || !temp.setWritable(false, false) ||
-                !temp.setReadable(true, true) || !temp.setWritable(true, true)) throw IOException("无法保护登录会话")
+            if (posixPermissions && (!temp.setReadable(false, false) || !temp.setWritable(false, false) ||
+                    !temp.setReadable(true, true) || !temp.setWritable(true, true))) throw IOException("无法保护登录会话")
             temp.outputStream().use { stream -> stream.write(encrypted); stream.fd.sync() }
             try { Files.move(temp.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING) }
             catch (_: AtomicMoveNotSupportedException) { Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING) }

@@ -59,6 +59,11 @@ mise run run
 - JDK、Gradle 由 mise 固定，不依赖机器上的绝对工具路径。
 - Android SDK 安装在被忽略的 `.tools/android/`，SDK 环境由 mise 配置。
 - `mise run setup` 装 API 37、Build Tools 和 OCR 模型（按 SHA-256 校验）。
+- 三个平台同一套命令：`mise run setup`、`mise run check`、`mise run run`、`mise run install-release` 通过 mise 的 `run_windows` 分派到 `tools/*.ps1`，其余平台走 `tools/*.sh`。Windows 用系统自带的 PowerShell 5.1，不依赖 WSL、Git Bash 或额外安装的 `unzip`。
+- `tools/setup.sh` 按 `uname -s` 选 `commandlinetools-mac-*` / `commandlinetools-linux-*`；OCR 模型统一由 `tools/fetch-ocr-model.sh` 拉取并校验，哈希检查优先 `sha256sum`，macOS 回退到 `shasum -a 256`。
+- 结构规则（350 行上限、文件名不含连字符）在 `tools/check-structure.sh` 与 `tools/check.ps1` 各有一份实现，两者都按物理行数计，改规则时同时改两处。
+- SDK 缓存放在 `.tools/android-user/`（`ANDROID_USER_HOME`），不放 `$HOME`：用户目录含非 ASCII 字符时，sdkmanager 写 `~/.android/cache` 会抛 `NoSuchFileException`，AGP 也会读不到缓存。
+- `mise run setup` 同时装 Build Tools 36.0.0 和 37.0.0：AGP 9 默认解析 36.0.0，37.0.0 对齐 `compileSdk`，两个都装好才能离线构建。
 - `mise run build` 产物：`app/build/outputs/apk/debug/app-debug.apk`。
 - `mise run run` 需要已连接的 Android 设备或模拟器。
 - 单独检查：`mise run check`。
