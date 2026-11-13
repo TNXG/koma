@@ -6,10 +6,13 @@ node = "24.19.0"
 [env]
 ANDROID_HOME = "{{config_root}}/.tools/android"
 ANDROID_SDK_ROOT = "{{config_root}}/.tools/android"
+# Keep SDK caches out of $HOME: sdkmanager and AGP both fail on non-ASCII home paths.
+ANDROID_USER_HOME = "{{config_root}}/.tools/android-user"
 
 [tasks.setup]
 description = "Install the Android SDK and verified OCR model"
 run = "bash tools/setup.sh"
+run_windows = "powershell -NoProfile -ExecutionPolicy Bypass -File tools/setup.ps1"
 
 [tasks.test]
 description = "Run Kotlin behavioral tests"
@@ -26,11 +29,14 @@ run = "gradle :app:assembleRelease"
 [tasks.install-release]
 description = "Install the release APK on a connected device"
 run = "gradle :app:assembleRelease && .tools/android/platform-tools/adb install -r app/build/outputs/apk/release/app-release.apk"
+run_windows = "powershell -NoProfile -ExecutionPolicy Bypass -File tools/install-release.ps1"
 
 [tasks.run]
 description = "Install and launch the Android application on a connected device"
 run = "gradle :app:installDebug && .tools/android/platform-tools/adb shell am start -n moe.tnxg.koma/.MainActivity"
+run_windows = "powershell -NoProfile -ExecutionPolicy Bypass -File tools/run.ps1"
 
 [tasks.check]
 description = "Verify behavior and component size constraints"
 run = "bash tools/check.sh"
+run_windows = "powershell -NoProfile -ExecutionPolicy Bypass -File tools/check.ps1"
