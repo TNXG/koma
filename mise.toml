@@ -1,0 +1,28 @@
+[tools]
+java = "temurin-21.0.12+101.0.LTS"
+gradle = "9.1.0"
+node = "24.19.0"
+
+[env]
+ANDROID_HOME = "{{config_root}}/.tools/android"
+ANDROID_SDK_ROOT = "{{config_root}}/.tools/android"
+
+[tasks.setup]
+description = "Install the Android SDK and verified OCR model"
+run = "bash tools/setup.sh"
+
+[tasks.test]
+description = "Run Kotlin behavioral tests"
+run = "gradle :core:testAndroidHostTest :ui:compose:testAndroidHostTest"
+
+[tasks.build]
+description = "Build the native Android application"
+run = "gradle :app:assembleDebug"
+
+[tasks.run]
+description = "Install and launch the Android application on a connected device"
+run = "gradle :app:installDebug && .tools/android/platform-tools/adb shell am start -n moe.tnxg.koma/.MainActivity"
+
+[tasks.check]
+description = "Verify behavior and component size constraints"
+run = "bash tools/check.sh"
