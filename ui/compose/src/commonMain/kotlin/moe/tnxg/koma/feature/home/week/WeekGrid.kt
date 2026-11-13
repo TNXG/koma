@@ -67,8 +67,8 @@ internal fun WeekGrid(schedule: WeekSchedule, timeGrid: List<TimeSlot>, today: L
         val rowHeight = ((maxHeight - padding * 2) / schedule.periodCount).coerceAtLeast(28.dp)
         val gridHeight = rowHeight * schedule.periodCount
         val compact = rowHeight < 46.dp
-        Row(Modifier.clip(RoundedCornerShape(18.dp)).background(c.surface)
-            .padding(horizontal = 6.dp, vertical = padding), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        Row(Modifier.padding(horizontal = 6.dp, vertical = padding),
+            horizontalArrangement = Arrangement.spacedBy(3.dp)) {
             Column(Modifier.width(AxisWidth)) {
                 repeat(schedule.periodCount) { i ->
                     Column(Modifier.height(rowHeight).fillMaxWidth().padding(top = 4.dp, end = 2.dp),

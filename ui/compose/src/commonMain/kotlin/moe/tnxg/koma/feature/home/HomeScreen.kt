@@ -5,10 +5,15 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.zIndex
+import androidx.compose.animation.core.spring
+import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -36,7 +41,8 @@ import moe.tnxg.koma.feature.home.week.WeekScreen
 fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,onReimport:()->Unit,onEditStart:()->Unit,onLogout:()->Unit) {
     val c=KomaTheme.colors
     val density=LocalDensity.current
-    val backdrop=rememberGraphicsLayer()
+    val backdrop=rememberLayerBackdrop { drawRect(c.bg);drawContent() }
+    val layer=backdrop.graphicsLayer
     val scope=rememberCoroutineScope()
     var todayDate by remember { mutableStateOf(today()) }
     var minutes by remember { mutableStateOf(nowMinutes()) }
@@ -46,6 +52,11 @@ fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,onReimport:()->Unit,o
     fun clamp(date:LocalDate)=date.coerceIn(termStart,termEnd)
     var selected by remember(snapshot,startDate){mutableStateOf(clamp(todayDate))}
     var weekly by rememberSaveable { mutableStateOf(false) }
+    val pages=rememberPagerState(initialPage=if(weekly)1 else 0,pageCount={2})
+    val dockBackdrop=rememberLayerBackdrop{drawRect(c.bg);drawContent()}
+    var weekRecenter by remember{mutableIntStateOf(0)}
+    var weekOverlay by remember{mutableStateOf(false)}
+    LaunchedEffect(weekly){pages.animateScrollToPage(if(weekly)1 else 0,animationSpec=spring(1f,1000f))}
     var profile by remember {mutableStateOf(false)}
     var calendar by remember {mutableStateOf(false)}
     var recenter by remember {mutableIntStateOf(0)}
@@ -89,19 +100,24 @@ fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,onReimport:()->Unit,o
         }
     }
     Box(Modifier.fillMaxSize().background(c.bg)) {
-        if (!weekly) {
-            HomeTimeline(blocks,scroll,minutes,selected==todayDate,backdrop)
-            HomeHeader(snapshot,startDate,selected,todayDate,minutes,scroll,backdrop) { enter.value }
-            HomeDock(false,{jump(todayDate)},{jumpJob?.cancel();weekly=true},{profile=true},Modifier.align(Alignment.BottomCenter))
-            BoxWithConstraints(Modifier.fillMaxSize()) {
-                val islandHeight=if(ISLAND_MAX_HEIGHT<maxHeight*.44f)ISLAND_MAX_HEIGHT else maxHeight*.44f
-                DateIsland(days,counts,selected,todayDate,recenter,islandHeight,::jump,{calendar=true},backdrop,
-                    Modifier.align(Alignment.BottomEnd).padding(bottom=maxHeight*.22f).navigationBarsPadding())
+        HorizontalPager(pages,Modifier.fillMaxSize().zIndex(if(weekly && weekOverlay)1f else 0f)
+            .layerBackdrop(dockBackdrop),userScrollEnabled=false){page->
+            if(page==0)Box(Modifier.fillMaxSize()){
+                HomeTimeline(blocks,scroll,minutes,selected==todayDate,backdrop)
+                HomeHeader(snapshot,startDate,selected,todayDate,minutes,scroll,layer){enter.value}
+                BoxWithConstraints(Modifier.fillMaxSize()){
+                    val islandHeight=if(ISLAND_MAX_HEIGHT<maxHeight*.44f)ISLAND_MAX_HEIGHT else maxHeight*.44f
+                    DateIsland(days,counts,selected,todayDate,recenter,islandHeight,::jump,{calendar=true},layer,
+                        Modifier.align(Alignment.BottomEnd).padding(bottom=maxHeight*.22f).navigationBarsPadding())
+                }
+            }else{
+                WeekScreen(snapshot,startDate,selected,todayDate,minutes,{if(weekly)selected=clamp(it)},
+                    {weekly=false;jump(it)},{weekly=false;jump(todayDate)},weekly,weekRecenter,{weekOverlay=it})
             }
-        } else {
-            WeekScreen(snapshot,startDate,selected,todayDate,minutes,{selected=clamp(it)},
-                {weekly=false;jump(it)},{weekly=false;jump(todayDate)},{profile=true})
         }
+        HomeDock(weekly,{weekly=false;jump(todayDate)},
+            {jumpJob?.cancel();if(weekly)weekRecenter++ else{weekRecenter=0;weekly=true}},{profile=true},
+            Modifier.align(Alignment.BottomCenter),page=dockBackdrop)
         DateSheet(calendar,selected,{jump(it);calendar=false},{calendar=false},"选一天，跳到那天的课程")
         MeDrawer(profile,snapshot.studentName,snapshot.semester.name,startDate,{profile=false},
             {profile=false;onReimport()},{profile=false;onEditStart()},{profile=false;onLogout()})

@@ -25,7 +25,6 @@ import moe.tnxg.koma.domain.calendar.*
 import moe.tnxg.koma.domain.model.Course
 import moe.tnxg.koma.domain.model.TimetableSnapshot
 import moe.tnxg.koma.domain.week.buildWeekSchedule
-import moe.tnxg.koma.feature.home.dock.HomeDock
 import moe.tnxg.koma.feature.home.dock.dockPress
 import moe.tnxg.koma.ui.component.icon.KomaGlyph
 import moe.tnxg.koma.ui.component.icon.KomaIcon
@@ -36,7 +35,8 @@ import moe.tnxg.koma.ui.theme.KomaTheme
 @Composable
 internal fun WeekScreen(
     snapshot: TimetableSnapshot, startDate: String, selected: LocalDate, today: LocalDate, minutes: Int,
-    onSelect: (LocalDate) -> Unit, onDay: (LocalDate) -> Unit, onToday: () -> Unit, onMe: () -> Unit,
+    onSelect: (LocalDate) -> Unit, onDay: (LocalDate) -> Unit, onToday: () -> Unit,
+    active: Boolean, recenter: Int, onOverlayChanged: (Boolean) -> Unit,
 ) {
     val c = KomaTheme.colors
     val total = snapshot.semester.totalWeeks.coerceAtLeast(1)
@@ -48,18 +48,21 @@ internal fun WeekScreen(
     val count = remember(schedule) { schedule.days.sumOf { day -> day.groups.sumOf { it.courses.size } } }
     var selector by remember { mutableStateOf(false) }
     var picked by remember { mutableStateOf<List<Course>>(emptyList()) }
+    SideEffect{onOverlayChanged(selector || picked.isNotEmpty())}
+    DisposableEffect(Unit){onDispose{onOverlayChanged(false)}}
     var pickedDate by remember { mutableStateOf(selected) }
     val currentWeek = weekIndex(startDate, today)
     val latestSelect by rememberUpdatedState(onSelect)
     val selectedWeekday = isoWeekday(selected)
     val arrow by animateFloatAsState(if (selector) 180f else 0f, tween(200))
-    LaunchedEffect(week) {
-        latestSelect(schedule.days[selectedWeekday - 1].date)
+    LaunchedEffect(week,active) {
+        if(active)latestSelect(schedule.days[selectedWeekday - 1].date)
     }
-    PlatformBackHandler(true, onToday)
+    PlatformBackHandler(active, onToday)
     fun goTo(target: Int) {
         scope.launch { pager.animateScrollToPage((target - 1).coerceIn(0, total - 1), animationSpec = tween(220)) }
     }
+    LaunchedEffect(recenter){if(recenter>0)goTo(currentWeek)}
     Box(Modifier.fillMaxSize().background(c.bg)) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
@@ -78,7 +81,7 @@ internal fun WeekScreen(
             }
             WeekDayHeader(schedule.days, schedule.days[selectedWeekday - 1].date, today, week,
                 { selector = true }, onDay)
-            Box(Modifier.fillMaxWidth().weight(1f).navigationBarsPadding().padding(bottom = 54.dp)) {
+            Box(Modifier.fillMaxWidth().weight(1f).navigationBarsPadding()) {
                 HorizontalPager(pager, Modifier.fillMaxSize(), key = { it }) { page ->
                     val data = remember(snapshot, startDate, page) { buildWeekSchedule(snapshot, startDate, page + 1) }
                     Box(Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 4.dp)) {
@@ -105,8 +108,6 @@ internal fun WeekScreen(
                 KomaText("回本周", size = 11, weight = FontWeight.Bold, color = Color.White)
             }
         }
-        HomeDock(true, onToday, { goTo(currentWeek.coerceIn(1, total)) }, onMe,
-            Modifier.align(Alignment.BottomCenter), fade = false)
         WeekSelector(selector, snapshot, startDate, week, today, { selector = false; goTo(it) }, { selector = false })
         WeekCourseSheet(picked, pickedDate, snapshot.timeGrid) { picked = emptyList() }
     }

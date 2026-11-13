@@ -9,9 +9,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.layer.GraphicsLayer
-import androidx.compose.ui.graphics.layer.drawLayer
+import top.yukonga.miuix.kmp.blur.LayerBackdrop
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 import androidx.compose.ui.unit.dp
 import moe.tnxg.koma.domain.timeline.DayBlock
 import moe.tnxg.koma.domain.timeline.FreeBlock
@@ -21,14 +20,11 @@ import moe.tnxg.koma.feature.home.scroll.HomeScrollState
 
 @Composable
 internal fun HomeTimeline(blocks: List<TimelineBlock>, scroll: HomeScrollState,
-    minutes: Int, viewIsToday: Boolean, backdrop: GraphicsLayer) {
+    minutes: Int, viewIsToday: Boolean, backdrop: LayerBackdrop) {
     val density = LocalDensity.current
     val bottomInset = with(density) { WindowInsets.safeDrawing.getBottom(this).toDp() }
     LazyColumn(
-        Modifier.fillMaxSize().drawWithContent {
-            backdrop.record { this@drawWithContent.drawContent() }
-            drawLayer(backdrop)
-        },
+        Modifier.fillMaxSize().layerBackdrop(backdrop),
         state = scroll.list,
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp,
             top = (scroll.headHeight + 8).dp, bottom = 120.dp + bottomInset),
