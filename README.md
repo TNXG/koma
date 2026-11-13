@@ -11,7 +11,7 @@ Kotlin Multiplatform + Compose Multiplatform，当前只构建 Android Applicati
 ├── core/                        KMP：领域、教务协议、平台接口
 │   └── src/
 │       ├── commonMain/kotlin/moe/tnxg/koma/
-│       │   ├── domain/           model、calendar、timeline、captcha
+│       │   ├── domain/           model、calendar、timeline、week、captcha
 │       │   ├── data/education/   协议与正方解析
 │       │   └── platform/         存储、凭据、OCR、通知接口
 │       ├── androidMain/          CAS HTTP、Cookie、Keystore、ONNX、通知
@@ -28,7 +28,7 @@ Kotlin Multiplatform + Compose Multiplatform，当前只构建 Android Applicati
 │       │       │   ├── login/form/
 │       │       │   ├── semester/
 │       │       │   ├── calendar/
-│       │       │   └── home/     header、timeline/course、dock、profile
+│       │       │   └── home/     header、timeline/course、week、dock、profile
 │       │       └── ui/           theme、component/text、button、sheet、loader
 │       └── androidMain/          Android UI 边界
 ├── tools/                       环境初始化与结构检查
@@ -68,6 +68,10 @@ UI 使用 Foundation 自定义布局与绘制，沿用 Capacitor 的亮暗配色
 首页采用边到边滚动：只给标题和底部操作区分别应用系统安全区，不在页面根部裁切状态栏区域。顶部保留 Web 的五层渐进模糊与羽化，模糊采样使用半分辨率顶端切片；日期区块通过派生状态隔离无关的逐帧滚动更新。底栏底部留白为 8dp 加系统手势安全区，渐隐背景覆盖手势区，避免课程内容透到手势条下方。
 
 日期导航改为贴右边缘的悬浮日期岛，不再占用底栏。收起时只露 26dp 把手，显示日期、周几与展开箭头；展开后是纵向吸附日期条，顶部为月历入口、底部为「今」，6 秒无操作自动收起。岛体背景模糊直接采样时间线的离屏录制层，边缘用纵向羽化擦除，避免遮挡线路内容。连续选日取消上一次跳转任务；滚动驱动的日期位移直接使用手势进度，不二次缓动，标题透明度与位移在绘制层更新。
+
+周课表：底栏「课表」进入七列节次视图，全部节次适配屏幕高度，不纵向滚动。固定表头采用左侧周号、上方星期和下方月日的紧凑布局，今日有底部细线；横滑翻周落定后更新表头。点击标题或表头周号打开贴屏幕底边的连续月历，展开时对背后的周课表施加渐变模糊，日历内容保持清晰，不额外添加底部白边。课程均来自已导入课表，未配置时间的节次不补造钟点；重叠课程保留逐门详情。当前课程时间线只在课程起止范围内显示。点击星期日期进入对应时间线，「今天」和系统返回回到今日；浏览其他周时显示短标签「今」浮钮，读屏动作是「回到本周」，不显示原全文字胶囊或抽屉底部按钮。视觉沿用现有 Foundation 组件、课程色与亮暗主题。
+
+周数选择月历的底部使用由清晰到模糊的渐进遮罩，采样月历自身底部内容并随弹层移动；周课表底栏不添加渐隐背景。
 
 图标：`ui/component/icon/KomaGlyph.kt` 保存原 MingCute SVG 路径，`KomaIcon.kt` 将路径绘制为原生 Compose `ImageVector`，统一处理颜色和无障碍说明；没有图标字体、emoji 替代或 Material 图标依赖。启动图标沿用原 Android 资源。字体与图标许可随资源放在 `composeResources/files/licenses/`。
 

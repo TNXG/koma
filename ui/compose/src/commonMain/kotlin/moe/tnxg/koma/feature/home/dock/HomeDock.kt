@@ -19,20 +19,20 @@ import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.theme.KomaTheme
 
 @Composable
-internal fun HomeDock(onNotify:(String)->Unit, onMe:()->Unit, modifier: Modifier=Modifier) {
+internal fun HomeDock(weekly:Boolean, onToday:()->Unit, onWeek:()->Unit, onMe:()->Unit, modifier: Modifier=Modifier, fade:Boolean=true) {
     val c=KomaTheme.colors
     val dark=c.bg.luminance()<.1f
     val dock=if(dark)listOf(Color(0xff202126).copy(alpha=.98f),Color(0xff1e1f24).copy(alpha=.98f))
         else listOf(Color(0xfffafafa).copy(alpha=.98f),Color(0xfffbfbfb).copy(alpha=.98f))
     val edge=if(dark)Color.White.copy(alpha=.06f) else c.surface
     Box(modifier.fillMaxWidth()) {
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Brush.verticalGradient(
+        if (fade) Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Brush.verticalGradient(
             0f to c.bg.copy(alpha=0f),.34f to c.bg.copy(alpha=.85f),.58f to c.bg,1f to c.bg))
             .navigationBarsPadding().height(120.dp))
         Row(Modifier.align(Alignment.BottomCenter).fillMaxWidth(.92f).navigationBarsPadding()
             .padding(bottom = 8.dp).dockSurface(dark,dock,edge,99).padding(3.dp)) {
-            DockTab(KomaGlyph.Home,"今天",true,Modifier.weight(1f)) {}
-            DockTab(KomaGlyph.Calendar,"课表",false,Modifier.weight(1f)){onNotify("周课表正在设计中")}
+            DockTab(KomaGlyph.Home,"今天",!weekly,Modifier.weight(1f),onToday)
+            DockTab(KomaGlyph.Calendar,"课表",weekly,Modifier.weight(1f),onWeek)
             DockTab(KomaGlyph.Settings,"我的",false,Modifier.weight(1f),onMe)
         }
     }

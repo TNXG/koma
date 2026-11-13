@@ -33,7 +33,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.BlurEffect
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.dialog
@@ -46,7 +57,7 @@ import moe.tnxg.koma.ui.theme.KomaTheme
 
 @Composable
 fun KomaSheet(open: Boolean, onDismiss: () -> Unit, horizontalPadding: Dp = 16.dp,
-    content: @Composable ColumnScope.() -> Unit) {
+    bottomPadding: Dp = 32.dp, bottomBlur: Dp = 0.dp, content: @Composable ColumnScope.() -> Unit) {
     val colors = KomaTheme.colors
     val progress = remember { Animatable(0f) }
     var mounted by remember { mutableStateOf(false) }
@@ -67,35 +78,74 @@ fun KomaSheet(open: Boolean, onDismiss: () -> Unit, horizontalPadding: Dp = 16.d
         Box(Modifier.fillMaxSize()
             .background(colors.scrim.copy(alpha = colors.scrim.alpha * progress.value * (1 - drag / height).coerceIn(0f, 1f)))
             .clickable(interactions, indication = null, onClick = onDismiss))
-        Column(
-            Modifier.align(Alignment.BottomCenter).widthIn(max = 430.dp).fillMaxWidth()
-                .onSizeChanged { height = it.height.toFloat().coerceAtLeast(1f) }
-                .graphicsLayer { translationY = height * (1 - progress.value) + drag }
-                .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                .background(colors.surface)
-                .clickable(remember { MutableInteractionSource() }, null) {}
-                .draggable(
-                    state = rememberDraggableState { delta -> drag = (drag + delta).coerceAtLeast(0f) },
-                    orientation = Orientation.Vertical,
-                    onDragStopped = { velocity ->
-                        if (drag > height * .25f || velocity > with(density) { 500.dp.toPx() }) {
-                            onDismiss()
-                        } else {
-                            scope.launch {
-                                val settle = Animatable(drag)
-                                settle.animateTo(0f, tween(500, easing = CubicBezierEasing(.32f, .72f, 0f, 1f))) {
-                                    drag = value
+        Box(Modifier.align(Alignment.BottomCenter).widthIn(max = 430.dp).fillMaxWidth()) {
+            val record = rememberGraphicsLayer()
+            Column(
+                Modifier.fillMaxWidth()
+                    .onSizeChanged { height = it.height.toFloat().coerceAtLeast(1f) }
+                    .graphicsLayer { translationY = height * (1 - progress.value) + drag }
+                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                    .background(colors.surface)
+                    .clickable(remember { MutableInteractionSource() }, null) {}
+                    .draggable(
+                        state = rememberDraggableState { delta -> drag = (drag + delta).coerceAtLeast(0f) },
+                        orientation = Orientation.Vertical,
+                        onDragStopped = { velocity ->
+                            if (drag > height * .25f || velocity > with(density) { 500.dp.toPx() }) {
+                                onDismiss()
+                            } else {
+                                scope.launch {
+                                    val settle = Animatable(drag)
+                                    settle.animateTo(0f, tween(500, easing = CubicBezierEasing(.32f, .72f, 0f, 1f))) {
+                                        drag = value
+                                    }
                                 }
                             }
-                        }
-                    },
-                )
-                .padding(start = horizontalPadding, end = horizontalPadding, bottom = 32.dp),
-        ) {
-            Box(Modifier.fillMaxWidth().height(16.dp), contentAlignment = Alignment.BottomCenter) {
-                Spacer(Modifier.width(100.dp).height(4.dp).clip(RoundedCornerShape(20.dp)).background(colors.line))
+                        },
+                    )
+                    .drawWithContent {
+                        record.record { this@drawWithContent.drawContent() }
+                        drawLayer(record)
+                    }
+                    .padding(start = horizontalPadding, end = horizontalPadding, bottom = bottomPadding),
+            ) {
+                Box(Modifier.fillMaxWidth().height(16.dp), contentAlignment = Alignment.BottomCenter) {
+                    Spacer(Modifier.width(100.dp).height(4.dp).clip(RoundedCornerShape(20.dp)).background(colors.line))
+                }
+                content()
             }
-            content()
+            if (bottomBlur > 0.dp) {
+                val blurHeight = with(density) { bottomBlur.toPx() }
+                Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(bottomBlur)
+                    .graphicsLayer {
+                        translationY = height * (1 - progress.value) + drag
+                        clip = true
+                    }) {
+                    listOf(2.dp, 4.dp, 8.dp, 14.dp).forEachIndexed { index, blur ->
+                        val radius = with(density) { blur.toPx() }
+                        Box(Modifier.fillMaxSize().graphicsLayer {
+                            compositingStrategy = CompositingStrategy.Offscreen
+                        }.drawWithCache {
+                            val blurred = obtainGraphicsLayer()
+                            blurred.renderEffect = BlurEffect(radius, radius, TileMode.Clamp)
+                            blurred.record {
+                                translate(top = -(height - blurHeight)) { drawLayer(record) }
+                            }
+                            val mask = Brush.verticalGradient(
+                                0f to Color.Transparent,
+                                (index + 1) / 5f to Color.Transparent,
+                                1f to Color.Black)
+                            onDrawBehind {
+                                drawLayer(blurred)
+                                drawRect(mask, blendMode = BlendMode.DstIn)
+                            }
+                        })
+                    }
+                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
+                        0f to colors.surface.copy(alpha = 0f),
+                        1f to colors.surface.copy(alpha = .9f))))
+                }
+            }
         }
     }
 }
