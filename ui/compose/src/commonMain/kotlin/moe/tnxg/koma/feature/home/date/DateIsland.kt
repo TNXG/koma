@@ -77,8 +77,9 @@ internal fun islandRevealTarget(slide: Float, velocity: Float, fling: Float): Bo
 
 /**
  * Floating date control docked to the right edge. Collapsed it leaves only a handle showing the
- * selected day; expanded it reveals a vertically snapping date strip. The handle is dragged left
- * to open and right to close, and always carries the month calendar entry.
+ * selected day; expanded it reveals a vertically snapping date strip, with the month calendar
+ * entry above it and the today shortcut below it. The handle is dragged left to open and right
+ * to close.
  */
 @Composable
 internal fun DateIsland(
@@ -146,15 +147,16 @@ internal fun DateIsland(
                     },
                 ),
         ) {
-            IslandHandle(selected, today, open, { reveal(!open); poke() }, { poke(); onCalendar() })
-            IslandBody(days, counts, selected, today, recenter, open, ::poke, onPick)
+            IslandHandle(selected, today, open, { reveal(!open); poke() })
+            IslandBody(days, counts, selected, today, recenter, open, ::poke, onPick,
+                { poke(); onCalendar() })
         }
     }
 }
 
 @Composable
 private fun IslandHandle(date: LocalDate, today: LocalDate, expanded: Boolean,
-    onToggle: () -> Unit, onCalendar: () -> Unit,
+    onToggle: () -> Unit,
 ) {
     val c = KomaTheme.colors
     val hint = if (expanded) "收起日期" else "展开日期"
@@ -176,13 +178,6 @@ private fun IslandHandle(date: LocalDate, today: LocalDate, expanded: Boolean,
             Box(Modifier.align(Alignment.TopCenter).offset(y = 14.dp).size(4.dp)
                 .background(c.accent, CircleShape))
         }
-        // Lives on the handle so the month calendar stays reachable while the island is collapsed.
-        Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp)
-            .fillMaxWidth().height(30.dp).background(c.surface2.copy(alpha = .72f), RoundedCornerShape(9.dp))
-            .semantics { contentDescription = "打开月历" }
-            .dockPress(.9f, onCalendar), contentAlignment = Alignment.Center) {
-            HomeIcon(KomaGlyph.Calendar, c.ink3, Modifier.size(14.dp), null)
-        }
     }
 }
 
@@ -190,11 +185,19 @@ private fun IslandHandle(date: LocalDate, today: LocalDate, expanded: Boolean,
 private fun IslandBody(
     days: List<LocalDate>, counts: Map<String, Int>, selected: LocalDate, today: LocalDate,
     recenter: Int, expanded: Boolean, onPoke: () -> Unit,
-    onPick: (LocalDate) -> Unit,
+    onPick: (LocalDate) -> Unit, onCalendar: () -> Unit,
 ) {
     val c = KomaTheme.colors
     Column(Modifier.width(ISLAND_BODY_WIDTH).fillMaxHeight()
         .padding(start = 6.dp, end = 6.dp, top = 8.dp, bottom = 9.dp)) {
+        // Month calendar entry mirrors the today shortcut at the bottom of the strip; it is an
+        // action, so it carries the accent instead of a passive grey surface.
+        IslandAction(Modifier.fillMaxWidth().height(38.dp)
+            .semantics { contentDescription = "打开月历"; role = Role.Button },
+            tinted = true, onClick = { onPoke(); onCalendar() }) {
+            HomeIcon(KomaGlyph.Calendar, c.accent, Modifier.size(15.dp), null)
+        }
+        Spacer(Modifier.height(7.dp))
         IslandStrip(days, counts, selected, today, recenter, expanded, onPoke, onPick,
             Modifier.weight(1f).fillMaxWidth())
         Spacer(Modifier.height(7.dp))
@@ -213,12 +216,12 @@ private fun IslandBody(
 
 @Composable
 private fun IslandAction(
-    modifier: Modifier, active: Boolean = false, onClick: () -> Unit,
+    modifier: Modifier, active: Boolean = false, tinted: Boolean = false, onClick: () -> Unit,
     content: @Composable () -> Unit,
 ) {
     val c = KomaTheme.colors
     Box(modifier.fillMaxHeight()
-        .background(if (active) c.accentSoft else c.surface2.copy(alpha = .62f), RoundedCornerShape(10.dp))
+        .background(if (active || tinted) c.accentSoft else c.surface2.copy(alpha = .62f), RoundedCornerShape(10.dp))
         .dockPress(.94f, onClick), contentAlignment = Alignment.Center) { content() }
 }
 

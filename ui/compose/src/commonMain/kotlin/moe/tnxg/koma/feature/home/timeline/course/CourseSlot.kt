@@ -21,11 +21,16 @@ import moe.tnxg.koma.domain.visual.courseVisual
 import moe.tnxg.koma.feature.home.icon.HomeIcon
 import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.theme.KomaTheme
+import moe.tnxg.koma.app.preferences.LocalAppPreferences
+import moe.tnxg.koma.app.preferences.ScheduleDensity
 
 @Composable
 internal fun CourseSlot(row: CourseRow, first: Boolean, last: Boolean, minutes: Int, viewIsToday: Boolean) {
     val c=KomaTheme.colors
-    val visual=courseVisual(row.course.name); val tone=courseTone(visual.tone)
+    val prefs=LocalAppPreferences.current
+    val visual=courseVisual(row.course.name)
+    val tone=if(prefs.colorCourses)courseTone(visual.tone) else c.accent
+    val padding=when(prefs.density){ScheduleDensity.Compact->8.dp;ScheduleDensity.Standard->12.dp;ScheduleDensity.Relaxed->18.dp}
     val past=row.state==RowState.Past
     val timeColor=if(past)c.ink5 else if(row.state==RowState.Now)tone else c.ink3
     val start = row.start
@@ -54,15 +59,15 @@ internal fun CourseSlot(row: CourseRow, first: Boolean, last: Boolean, minutes: 
             Column(Modifier.fillMaxWidth().background(fill,shape)
                 .then(if(row.state==RowState.Now)Modifier.border(1.5.dp,tone.copy(alpha=.32f),shape) else Modifier)
                 .drawWithContent { drawContent(); drawCircle(c.bg,6.dp.toPx(),Offset(0f,size.height/2)); drawCircle(c.bg,6.dp.toPx(),Offset(size.width,size.height/2)) }
-                .padding(start=16.dp,end=14.dp,top=12.dp,bottom=12.dp)) {
+                .padding(start=16.dp,end=14.dp,top=padding,bottom=padding)) {
                 KomaText(row.course.name,Modifier.padding(end=26.dp),size=15.5f,lineHeight=1.28f,weight=FontWeight.Bold,color=if(past)c.ink4 else c.ink,letterSpacing=-.155f)
-                row.course.location?.takeIf{it.isNotEmpty()}?.let { text ->
+                row.course.location?.takeIf{prefs.showRoom && it.isNotEmpty()}?.let { text ->
                     Row(Modifier.padding(top=4.dp,end=24.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(5.dp)) {
                         HomeIcon(KomaGlyph.Location,if(past)c.ink5 else lerp(c.ink4,tone,.55f),Modifier.size(13.dp))
                         KomaText(text,size=12.5f,weight=FontWeight.Medium,color=if(past)c.ink5 else c.ink3,maxLines=1)
                     }
                 }
-                row.course.teacher?.takeIf{it.isNotEmpty()}?.let { text ->
+                row.course.teacher?.takeIf{prefs.showTeacher && it.isNotEmpty()}?.let { text ->
                     Row(Modifier.padding(top=3.dp,end=24.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(5.dp)) {
                         HomeIcon(KomaGlyph.Person,if(past)c.ink5 else lerp(c.ink4,tone,.55f),Modifier.size(13.dp))
                         KomaText(text,size=12.5f,weight=FontWeight.Medium,color=if(past)c.ink5 else c.ink3,maxLines=1)
