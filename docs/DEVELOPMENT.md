@@ -68,7 +68,7 @@ mise run run
 - **视觉基线**：UI 用 Foundation 自绘，沿用 Capacitor 的亮暗配色、Inter 字体、字号、曲线和时长，不套用 Material、Miuix 等库的默认视觉。Inter 从原 WOFF2 生成相同字重的 TTF，避免换字体改变字宽。
 - **首页与顶部模糊**：采用边到边滚动，只给标题和底部操作区分别应用系统安全区，不在页面根部裁切状态栏。顶部保留五层渐进模糊与羽化，采样半分辨率顶端切片；日期区块通过派生状态隔离逐帧滚动更新。
 - **底栏玻璃**：参考 [SukiSU FloatingBottomBar](https://github.com/SukiSU-Ultra/SukiSU-Ultra/blob/main/manager/app/src/main/java/com/sukisu/ultra/ui/component/FloatingBottomBar.kt) 的三层绘制（原始来源 compose-miuix-ui / Kyant0 AndroidLiquidGlass，Apache-2.0）。不支持运行时着色器时退回纯色底板和可见选中底色。Dock 在时间线与周课表外只创建一次，三项各 76dp 加内边距共 236dp，底部居中，保留 8dp 加手势安全区。时间线与周课表通过同一个横向 Pager 切换，Dock 采样 Pager 当前实际画面。系统关闭动画时遵循 Compose 动画时长缩放。
-- **日期岛**：贴右边缘悬浮，收起时只露 26dp 把手（显示日期、周几与展开箭头）；展开后是纵向吸附日期条，顶部为月历入口、底部为「今」，6 秒无操作自动收起。背景模糊采样时间线离屏录制层，边缘纵向羽化。
+- **日期岛**：贴右边缘悬浮，收起时只露 26dp 把手（日期、周几、展开箭头和常驻月历入口）；把手可横向拖拽，面板跟随手指展开或收起，松手先看速度再看是否过半吸附。展开后是纵向吸附日期条，底部为「今」，6 秒无操作自动收起。背景模糊采样时间线离屏录制层，边缘纵向羽化。
 - **周课表**：底栏「课表」进入七列节次视图，全部节次适配屏幕高度，不纵向滚动。固定表头为左侧周号、上方星期、下方月日，今日有底部细线；横滑翻周落定后更新表头。点击标题或周号打开贴底边的连续月历，展开时对背后周课表施加渐变模糊。未配置时间的节次不补造钟点；重叠课程保留逐门详情。浏览其他周时显示短标签「今」浮钮，读屏动作是「回到本周」。
 - **月历遮罩**：底部使用由清晰到模糊的渐进遮罩，采样月历自身底部内容并随弹层移动。
 - **图标与许可**：`ui/component/icon/KomaGlyph.kt` 保存 MingCute SVG 路径，`KomaIcon.kt` 绘制为原生 Compose `ImageVector`。启动图标为自适应图标，`app/icon.svg` 是 108dp 画布的设计源，前景与 `res/drawable/ic_launcher_foreground.xml` 共用坐标（内容框 42dp，落在 66dp 安全圆内），背景为白到 `#F2F2F1` 竖向渐变，`ic_launcher_monochrome.xml` 供单色着色；minSdk 为 29，`mipmap-anydpi-v26` 是唯一生效的图标资源。字体与图标许可放在 `composeResources/files/licenses/`。
