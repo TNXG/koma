@@ -20,6 +20,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    buildTypes {
+        release {
+            // 本地构建与 adb 安装沿用调试签名；正式分发时替换为发布密钥。
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
     buildFeatures { compose = true }
     packaging { jniLibs.useLegacyPackaging = true }
 }

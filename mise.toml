@@ -19,6 +19,14 @@ run = "gradle :core:testAndroidHostTest :ui:compose:testAndroidHostTest"
 description = "Build the native Android application"
 run = "gradle :app:assembleDebug"
 
+[tasks.build-release]
+description = "Build the release APK, signed with the debug key for adb install"
+run = "gradle :app:assembleRelease"
+
+[tasks.install-release]
+description = "Install the release APK on a connected device"
+run = "gradle :app:assembleRelease && .tools/android/platform-tools/adb install -r app/build/outputs/apk/release/app-release.apk"
+
 [tasks.run]
 description = "Install and launch the Android application on a connected device"
 run = "gradle :app:installDebug && .tools/android/platform-tools/adb shell am start -n moe.tnxg.koma/.MainActivity"
