@@ -7,8 +7,8 @@ plugins {
 kotlin {
     androidLibrary {
         namespace = "moe.tnxg.koma.core"
-        compileSdk = 35
-        minSdk = 26
+        compileSdk = 37
+        minSdk = 29
         androidResources.enable = true
         withHostTestBuilder {}.configure {}
         withDeviceTestBuilder { sourceSetTreeName = "test" }.configure {
@@ -33,7 +33,7 @@ kotlin {
             implementation("androidx.activity:activity-ktx:1.10.1")
             implementation("androidx.core:core-ktx:1.16.0")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-            implementation("com.microsoft.onnxruntime:onnxruntime-android:1.21.0")
+            implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
         }
         getByName("androidHostTest").dependencies {
             implementation(kotlin("test-junit"))

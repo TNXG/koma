@@ -9,8 +9,8 @@ plugins {
 kotlin {
     androidLibrary {
         namespace = "moe.tnxg.koma.ui"
-        compileSdk = 35
-        minSdk = 26
+        compileSdk = 37
+        minSdk = 29
         androidResources.enable = true
         withHostTestBuilder {}.configure {}
         compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }
@@ -23,6 +23,7 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.ui)
             implementation(compose.components.resources)
+            implementation("top.yukonga.miuix.kmp:miuix-blur:0.9.4")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")

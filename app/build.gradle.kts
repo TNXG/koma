@@ -7,11 +7,11 @@ plugins {
 
 android {
     namespace = "moe.tnxg.koma"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig {
         applicationId = "moe.tnxg.koma"
-        minSdk = 26
-        targetSdk = 35
+        minSdk = 29
+        targetSdk = 37
         versionCode = 2
         versionName = "0.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
