@@ -33,9 +33,10 @@ fun LoginScreen(app: AppController) {
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
             .padding(start = 20.dp, end = 20.dp, top = 34.dp)) {
+            KomaTextButton("返回选择学校", app::back, Modifier.padding(vertical = 12.dp))
             KomaText("登录教务", size = 26, weight = FontWeight.ExtraBold, letterSpacing = -.52f, lineHeight = 1.2f)
             Spacer(Modifier.height(6.dp))
-            KomaText("新疆理工职业大学 · 统一身份认证", size = 12.5f, weight = FontWeight.Medium, color = colors.ink4)
+            KomaText("$SCHOOL_NAME · 统一身份认证", size = 12.5f, weight = FontWeight.Medium, color = colors.ink4)
             when (app.phase) {
                 LoginPhase.Idle, LoginPhase.Preparing, LoginPhase.Importing -> {
                     Column(Modifier.fillMaxWidth().padding(vertical = 72.dp),

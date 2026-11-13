@@ -13,7 +13,7 @@ import moe.tnxg.koma.domain.captcha.captchaAnswer
 import moe.tnxg.koma.platform.PlatformServices
 import moe.tnxg.koma.platform.SavedCredentials
 
-enum class Route { Login, Semester, Home }
+enum class Route { Welcome, Schools, Login, Semester, Home }
 enum class LoginPhase { Idle, Preparing, Form, LoggingIn, Importing, Error }
 
 class AppController(val platform: PlatformServices, private val scope: CoroutineScope) {
@@ -21,7 +21,7 @@ class AppController(val platform: PlatformServices, private val scope: Coroutine
     var route by mutableStateOf(when {
         timetable.configured -> Route.Home
         timetable.snapshot != null -> Route.Semester
-        else -> Route.Login
+        else -> Route.Welcome
     })
         private set
     var phase by mutableStateOf(LoginPhase.Idle)
@@ -69,7 +69,31 @@ class AppController(val platform: PlatformServices, private val scope: Coroutine
         captchaInput = ""
     }
 
-    fun reimport() { route = Route.Login; phase = LoginPhase.Idle }
+    fun openSchools() { route = Route.Schools; phase = LoginPhase.Idle }
+
+    fun selectSchool() {
+        message = ""
+        captcha = null
+        captchaInput = ""
+        manualCaptcha = false
+        phase = LoginPhase.Idle
+        route = Route.Login
+    }
+
+    val canGoBack: Boolean get() = route == Route.Schools || route == Route.Login ||
+        (route == Route.Semester && timetable.configured)
+
+    fun back() {
+        val destination = when (route) {
+            Route.Login -> Route.Schools
+            Route.Schools -> if (timetable.configured) Route.Home else Route.Welcome
+            Route.Semester -> if (timetable.configured) Route.Home else return
+            else -> return
+        }
+        operation?.cancel()
+        phase = LoginPhase.Idle
+        route = destination
+    }
     fun editStart() { route = Route.Semester }
     fun confirmStart(iso: String) { timetable.confirm(iso); route = Route.Home }
 
@@ -83,7 +107,7 @@ class AppController(val platform: PlatformServices, private val scope: Coroutine
         captchaInput = ""
         message = ""
         phase = LoginPhase.Idle
-        route = Route.Login
+        route = Route.Welcome
     }
 
     private suspend fun login() {

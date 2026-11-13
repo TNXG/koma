@@ -4,7 +4,9 @@
 
 <h1 align="center">Koma Pro</h1>
 
-<p align="center">给新疆理工职业大学学生用的课表应用。看今天上什么课、几点上下课、下一节去哪里。</p>
+<p align="center"><strong>列车终将开往下一站，那舞台呢？我们呢？</strong></p>
+
+<p align="center">课表应用。看今天上什么课、几点上下课、下一节去哪里。</p>
 
 <table>
   <tr>

@@ -27,6 +27,7 @@ Kotlin Multiplatform + Compose Multiplatform，当前只构建 Android Applicati
 │       │   └── kotlin/moe/tnxg/koma/
 │       │       ├── app/          session、state、导航入口
 │       │       ├── feature/
+│       │       │   ├── onboarding/
 │       │       │   ├── login/form/
 │       │       │   ├── semester/
 │       │       │   ├── calendar/
@@ -73,6 +74,7 @@ mise run run
 - **月历遮罩**：底部使用由清晰到模糊的渐进遮罩，采样月历自身底部内容并随弹层移动。
 - **图标与许可**：`ui/component/icon/KomaGlyph.kt` 保存 MingCute SVG 路径，`KomaIcon.kt` 绘制为原生 Compose `ImageVector`。启动图标为自适应图标，`app/icon.svg` 是 108dp 画布的设计源，前景与 `res/drawable/ic_launcher_foreground.xml` 共用坐标（内容框 42dp，落在 66dp 安全圆内），背景为白到 `#F2F2F1` 竖向渐变，`ic_launcher_monochrome.xml` 供单色着色；minSdk 为 29，`mipmap-anydpi-v26` 是唯一生效的图标资源。字体与图标许可放在 `composeResources/files/licenses/`。
 - **兼容与数据迁移**：应用 ID 保持 `moe.tnxg.koma`，原 Keystore 别名、偏好文件和通知渠道保持兼容。首次启动在读取课表前，从旧 WebView 存储读取 `koma.snapshot` 与 `koma.startDate`，写入成功才记录迁移完成，不删除原 localStorage。WebView 仅用于一次性升级读取，不承载界面。
+- **首次使用**：没有本地快照时显示欢迎页，使用 slogan「列车终将开往下一站，那舞台呢？我们呢？」；点击「开始」先选择学校，选择后才创建登录连接。当前仅列出已接入的新疆理工职业大学，不提供尚未实现的手动添加或跳过入口。导入后确认开学日期；已有完整课表直接进入首页，只有快照但未确认日期则恢复日期设置。「重新导入」也先选学校，返回不清除离线课表；登录页返回会取消当前操作，退出登录并清除课表后重新显示欢迎页。
 - **真实数据**：网络登录需要学校服务可访问，不把测试课表或虚假登录作为生产回退。
 
 ## 添加其他学校的教务系统
@@ -91,8 +93,8 @@ mise run run
 5. **放行域名**：修改 `core/src/androidMain/kotlin/moe/tnxg/koma/data/education/http/CookieVault.kt` 的 `allowed(host)`，把新学校的 CAS 域名和教务域名加进去。不加的话 Cookie 存不下来，登录后会立刻掉线。
 6. **替换平台装配**：修改 `core/src/androidMain/kotlin/moe/tnxg/koma/platform/AndroidPlatformServices.kt`，把 `edu` 换成新学校的 `EduService` 实例，同步改好 cookie 文件名和凭据 key（`vault.load/save/remove("<schoolId>")`）。
 7. **统一 `schoolId`**：`TimetableSnapshot.schoolId` 和 `Course.source["pluginId"]` 必须用同一个字符串。`ui/compose/src/commonMain/kotlin/moe/tnxg/koma/app/session/TimetableSession.kt` 靠 `schoolId` 和 `term` 判断是否换校或换学期，变了就会清空开学日期。
-8. **修改登录页副标题**：修改 `ui/compose/src/commonMain/kotlin/moe/tnxg/koma/feature/login/LoginScreen.kt` 里的副标题文案（目前是「新疆理工职业大学 · 统一身份认证」）。这是 UI 里唯一硬编码学校名的地方，其他界面不要出现学校名。
+8. **修改学校名称**：修改 `ui/compose/src/commonMain/kotlin/moe/tnxg/koma/feature/login/SchoolScreen.kt` 的 `SCHOOL_NAME`。学校选择卡片和登录页副标题共用该名称；学校列表必须与平台实际装配的教务服务一致。
 9. **处理节次时间**：如果新学校拿不到 `TIMES` 接口，`zfTimeGrid` 会返回空，系统会回退到同校上次的 grid 或 `DEFAULT_TIME_GRID`。如果新学校上下课时间不同，提供自己的默认 grid，避免学生看到错的钟点。
 10. **补充测试并检查**：照 `core/src/androidHostTest/kotlin/moe/tnxg/koma/data/education/XjvutEduServiceTest.kt` 的 `EducationFixture` 编排「登录 → 周次 → 课表」全链路拦截器，断言 `importTimetable()` 返回的 `TimetableSnapshot`；然后跑 `mise run test` 和 `mise run check`。
 11. **真机走一遍完整流程**：首次登录、验证码识别错后重试、退出后再登录、杀进程重开能否免登录重新导入、改开学日期、换学期导入。
-12. **多学校并存原则**：不要在校内实现里写 `if (学校 == ...)`。一台设备只持有一个 `EduService` 实例，靠 `schoolId` 区分快照。以后要加「选学校」入口时，只需在登录页前加一层选择，把 `PlatformServices.edu` 换成对应实现。
+12. **多学校并存原则**：不要在校内实现里写 `if (学校 == ...)`。当前选择页仅展示平台已装配的新疆理工职业大学，不能只增加学校名称而继续调用同一个服务。接入多校时，选择结果必须切换 `PlatformServices.edu` 及对应 Cookie、凭据命名空间，一台设备同时只持有一个 `EduService` 实例，靠 `schoolId` 区分快照。

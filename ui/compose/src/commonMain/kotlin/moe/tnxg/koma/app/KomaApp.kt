@@ -22,6 +22,8 @@ import moe.tnxg.koma.app.state.AppController
 import moe.tnxg.koma.app.state.Route
 import moe.tnxg.koma.feature.home.HomeScreen
 import moe.tnxg.koma.feature.login.LoginScreen
+import moe.tnxg.koma.feature.login.SchoolScreen
+import moe.tnxg.koma.feature.onboarding.WelcomeScreen
 import moe.tnxg.koma.feature.semester.SemesterScreen
 import moe.tnxg.koma.platform.PlatformServices
 import moe.tnxg.koma.ui.component.button.KomaButton
@@ -54,16 +56,16 @@ fun KomaApp(platform: PlatformServices) {
                     else KomaButton("读取失败，重试", { attempt++ })
                 }
             } else {
-                PlatformBackHandler(app.route != Route.Home && app.timetable.configured) {
-                    app.confirmStart(app.timetable.startDate)
-                }
+                PlatformBackHandler(app.canGoBack, app::back)
                 when (app.route) {
+                    Route.Welcome -> WelcomeScreen(app::openSchools)
+                    Route.Schools -> SchoolScreen(app::selectSchool, app::back)
                     Route.Login -> LoginScreen(app)
                     Route.Semester -> app.timetable.snapshot?.let {
                         SemesterScreen(it.semester, app.timetable.startDate, app::confirmStart)
                     }
                     Route.Home -> app.timetable.snapshot?.let {
-                        HomeScreen(it, app.timetable.startDate, app::reimport, app::editStart, app::logout)
+                        HomeScreen(it, app.timetable.startDate, app::openSchools, app::editStart, app::logout)
                     }
                 }
             }
