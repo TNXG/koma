@@ -10,6 +10,7 @@ import moe.tnxg.koma.ocr.OcrEngine
 import moe.tnxg.koma.platform.migration.LegacyTimetableMigration
 import moe.tnxg.koma.platform.notification.AndroidNotificationService
 import moe.tnxg.koma.platform.notification.NotificationPermissionHost
+import moe.tnxg.koma.platform.photo.LocalPhotoStore
 import moe.tnxg.koma.security.CredentialVault
 import java.io.File
 
@@ -22,6 +23,7 @@ class AndroidPlatformServices(context: Context) : PlatformServices {
     override val notifications: NotificationService = AndroidNotificationService(
         app, context as? NotificationPermissionHost,
     )
+    override val images: ImageServices = LocalPhotoStore(context)
 
     override fun readSetting(key: String): String? = settings.getString(key, null)
 

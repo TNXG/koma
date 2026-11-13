@@ -57,7 +57,7 @@ import kotlin.math.sign
 
 /** 底板采样页面；镜片采样页面与已玻璃化的强调色按钮副本。 */
 @Composable
-internal fun HomeDock(weekly:Boolean, onToday:()->Unit, onWeek:()->Unit, onMe:()->Unit,
+internal fun HomeDock(selected:Int, onToday:()->Unit, onWeek:()->Unit, onMe:()->Unit,
     modifier: Modifier=Modifier, page: LayerBackdrop) {
     val c=KomaTheme.colors
     val dark=c.bg.luminance()<.1f
@@ -69,7 +69,7 @@ internal fun HomeDock(weekly:Boolean, onToday:()->Unit, onWeek:()->Unit, onMe:()
     val tabs=rememberLayerBackdrop()
     val combined=rememberCombinedBackdrop(page,tabs)
     val shader=isRuntimeShaderSupported()
-    val target=if(weekly)1 else 0
+    val target=selected
     val latestTarget by rememberUpdatedState(target)
     val scope=rememberCoroutineScope()
     val motion=remember(scope){DockMotion(scope,target)}
@@ -85,7 +85,7 @@ internal fun HomeDock(weekly:Boolean, onToday:()->Unit, onWeek:()->Unit, onMe:()
         }
     }
     val onActivate by rememberUpdatedState<(Int)->Unit>({ chosen ->
-        motion.animateTo(if(chosen==2)latestTarget else chosen)
+        motion.animateTo(chosen)
         when(chosen){0->onToday();1->onWeek();2->onMe()}
     })
     LaunchedEffect(target){
@@ -131,9 +131,9 @@ internal fun HomeDock(weekly:Boolean, onToday:()->Unit, onWeek:()->Unit, onMe:()
                     .height(64.dp).padding(4.dp),
                 verticalAlignment=Alignment.CenterVertically,
             ) {
-                DockTab(KomaGlyph.Home,"今天",!weekly,shader,Modifier.weight(1f)){onActivate(0)}
-                DockTab(KomaGlyph.Calendar,"课表",weekly,shader,Modifier.weight(1f)){onActivate(1)}
-                DockTab(KomaGlyph.Settings,"我的",false,shader,Modifier.weight(1f)){onActivate(2)}
+                DockTab(KomaGlyph.Home,"今天",selected==0,shader,Modifier.weight(1f)){onActivate(0)}
+                DockTab(KomaGlyph.Calendar,"课表",selected==1,shader,Modifier.weight(1f)){onActivate(1)}
+                DockTab(KomaGlyph.Person,"我的",selected==2,shader,Modifier.weight(1f)){onActivate(2)}
             }
             if(shader) {
                 // alpha 在录制节点外：屏幕上隐藏，镜片仍可读取完整底板和强调色按钮。
@@ -144,7 +144,7 @@ internal fun HomeDock(weekly:Boolean, onToday:()->Unit, onWeek:()->Unit, onMe:()
                     verticalAlignment=Alignment.CenterVertically) {
                     DockTabContent(KomaGlyph.Home,"今天",c.accent,Modifier.weight(1f),{1f+.2f*progress.value})
                     DockTabContent(KomaGlyph.Calendar,"课表",c.accent,Modifier.weight(1f),{1f+.2f*progress.value})
-                    DockTabContent(KomaGlyph.Settings,"我的",c.accent,Modifier.weight(1f),{1f+.2f*progress.value})
+                    DockTabContent(KomaGlyph.Person,"我的",c.accent,Modifier.weight(1f),{1f+.2f*progress.value})
                 }
             }
             if(shader && tabWidth>0f) {

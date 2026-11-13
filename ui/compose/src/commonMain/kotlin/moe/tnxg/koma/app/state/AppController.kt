@@ -7,6 +7,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import moe.tnxg.koma.app.preferences.PreferenceStore
 import moe.tnxg.koma.app.session.TimetableSession
 import moe.tnxg.koma.data.education.LoginPreparation
 import moe.tnxg.koma.domain.captcha.captchaAnswer
@@ -16,7 +17,11 @@ import moe.tnxg.koma.platform.SavedCredentials
 enum class Route { Welcome, Schools, Login, Semester, Home }
 enum class LoginPhase { Idle, Preparing, Form, LoggingIn, Importing, Error }
 
-class AppController(val platform: PlatformServices, private val scope: CoroutineScope) {
+class AppController(
+    val platform: PlatformServices,
+    private val preferences: PreferenceStore,
+    private val scope: CoroutineScope,
+) {
     val timetable = TimetableSession(platform)
     var route by mutableStateOf(when {
         timetable.configured -> Route.Home
@@ -100,6 +105,8 @@ class AppController(val platform: PlatformServices, private val scope: Coroutine
     fun logout() = runOperation {
         platform.edu.logout()
         platform.saveCredentials(null)
+        preferences.clearSessionAvatar()
+        platform.images?.clearCoverCache()
         timetable.clear()
         username = ""
         password = ""
@@ -156,6 +163,7 @@ class AppController(val platform: PlatformServices, private val scope: Coroutine
     private suspend fun importTimetable() {
         phase = LoginPhase.Importing
         timetable.accept(platform.edu.importTimetable())
+        preferences.ensureAvatarSeed()
         route = Route.Semester
         phase = LoginPhase.Idle
     }

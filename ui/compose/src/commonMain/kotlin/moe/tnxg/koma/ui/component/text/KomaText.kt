@@ -4,6 +4,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -20,8 +21,9 @@ fun KomaText(
     maxLines: Int = Int.MAX_VALUE,
     letterSpacing: Float = 0f,
     lineHeight: Float = 1.45f,
+    shadow: Shadow? = null,
 ) {
-    KomaText(text, modifier, size.toFloat(), weight, color, maxLines, letterSpacing, lineHeight)
+    KomaText(text, modifier, size.toFloat(), weight, color, maxLines, letterSpacing, lineHeight, shadow)
 }
 
 @Composable
@@ -34,6 +36,7 @@ fun KomaText(
     maxLines: Int = Int.MAX_VALUE,
     letterSpacing: Float = 0f,
     lineHeight: Float = 1.45f,
+    shadow: Shadow? = null,
 ) {
     BasicText(
         text = text,
@@ -48,6 +51,7 @@ fun KomaText(
             fontFeatureSettings = "cv11, ss01",
             lineHeight = (size * lineHeight).sp,
             letterSpacing = letterSpacing.sp,
+            shadow = shadow,
         ),
     )
 }

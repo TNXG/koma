@@ -14,6 +14,9 @@ interface PlatformServices {
     suspend fun recognizeCaptcha(dataUrl: String, view: Int): String?
     val notifications: NotificationService?
 
+    /** Null on platforms without a photo picker; the profile then stays on generated artwork. */
+    val images: ImageServices? get() = null
+
     /** Must finish before reading the snapshot or start date on application startup. */
     suspend fun migrateLegacySettings() {}
 }

@@ -54,11 +54,13 @@ import androidx.compose.ui.unit.Dp
 import kotlinx.coroutines.launch
 import moe.tnxg.koma.ui.platform.PlatformBackHandler
 import moe.tnxg.koma.ui.theme.KomaTheme
+import moe.tnxg.koma.app.preferences.LocalAppPreferences
 
 @Composable
 fun KomaSheet(open: Boolean, onDismiss: () -> Unit, horizontalPadding: Dp = 16.dp,
     bottomPadding: Dp = 32.dp, bottomBlur: Dp = 0.dp, content: @Composable ColumnScope.() -> Unit) {
     val colors = KomaTheme.colors
+    val duration = if(LocalAppPreferences.current.reduceMotion) 0 else 500
     val progress = remember { Animatable(0f) }
     var mounted by remember { mutableStateOf(false) }
     var height by remember { mutableFloatStateOf(600f) }
@@ -69,7 +71,7 @@ fun KomaSheet(open: Boolean, onDismiss: () -> Unit, horizontalPadding: Dp = 16.d
     LaunchedEffect(open) {
         if (open) mounted = true
         progress.animateTo(if (open) 1f else 0f,
-            tween(500, easing = CubicBezierEasing(.32f, .72f, 0f, 1f)))
+            tween(duration, easing = CubicBezierEasing(.32f, .72f, 0f, 1f)))
         if (!open) { mounted = false; drag = 0f }
     }
     PlatformBackHandler(mounted, onDismiss)
@@ -96,7 +98,7 @@ fun KomaSheet(open: Boolean, onDismiss: () -> Unit, horizontalPadding: Dp = 16.d
                             } else {
                                 scope.launch {
                                     val settle = Animatable(drag)
-                                    settle.animateTo(0f, tween(500, easing = CubicBezierEasing(.32f, .72f, 0f, 1f))) {
+                                    settle.animateTo(0f, tween(duration, easing = CubicBezierEasing(.32f, .72f, 0f, 1f))) {
                                         drag = value
                                     }
                                 }

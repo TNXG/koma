@@ -1,10 +1,14 @@
 package moe.tnxg.koma.app.state
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import moe.tnxg.koma.app.preferences.PreferenceStore
 import moe.tnxg.koma.app.session.TimetableSession
 import moe.tnxg.koma.data.education.EduService
 import moe.tnxg.koma.data.education.LoginPreparation
@@ -15,10 +19,13 @@ import moe.tnxg.koma.domain.model.TimetableSnapshot
 import moe.tnxg.koma.platform.PlatformServices
 import moe.tnxg.koma.platform.SavedCredentials
 
+private fun controller(platform: PlatformServices, scope: CoroutineScope) =
+    AppController(platform, PreferenceStore(platform::readSetting, platform::writeSetting), scope)
+
 class AppControllerTest {
     @Test
     fun newInstallStartsAtWelcomeWithoutImporting() = runTest {
-        val app = AppController(OnboardingPlatform(), backgroundScope)
+        val app = controller(OnboardingPlatform(), backgroundScope)
         assertEquals("Welcome", app.route.name)
         assertEquals(LoginPhase.Idle, app.phase)
         assertNull(app.timetable.snapshot)
@@ -28,7 +35,7 @@ class AppControllerTest {
     fun reimportShowsSchoolSelectionWithoutLosingOfflineTimetable() = runTest {
         val platform = OnboardingPlatform()
         TimetableSession(platform).apply { accept(snapshot()); confirm("2026-08-31") }
-        val app = AppController(platform, backgroundScope)
+        val app = controller(platform, backgroundScope)
         assertEquals(Route.Home, app.route)
         app.openSchools()
         assertEquals("Schools", app.route.name)
@@ -38,7 +45,7 @@ class AppControllerTest {
 
     @Test
     fun loginCanReturnToSchoolSelectionAndWelcome() = runTest {
-        val app = AppController(OnboardingPlatform(), this)
+        val app = controller(OnboardingPlatform(), this)
         app.openSchools()
         app.selectSchool()
         app.prepare()
@@ -54,7 +61,7 @@ class AppControllerTest {
     @Test
     fun loginImportRequiresDateConfirmationBeforeHomeAndSurvivesRestart() = runTest {
         val platform = OnboardingPlatform()
-        val app = AppController(platform, this)
+        val app = controller(platform, this)
         app.openSchools()
         app.selectSchool()
         app.prepare()
@@ -67,16 +74,38 @@ class AppControllerTest {
         assertEquals("xjvut", app.timetable.snapshot?.schoolId)
         app.confirmStart("2026-09-07")
         assertEquals(Route.Home, app.route)
-        val restored = AppController(platform, backgroundScope)
+        val restored = controller(platform, backgroundScope)
         assertEquals(Route.Home, restored.route)
         assertEquals("2026-09-07", restored.timetable.startDate)
+    }
+
+    @Test
+    fun avatarSeedArrivesWithTheLoginAndLogoutForgetsIt() = runTest {
+        val platform = OnboardingPlatform()
+        val store = PreferenceStore(platform::readSetting, platform::writeSetting)
+        val app = AppController(platform, store, this)
+        app.openSchools()
+        app.selectSchool()
+        app.prepare()
+        testScheduler.runCurrent()
+        app.username = "student"
+        app.password = "password"
+        app.submit()
+        testScheduler.runCurrent()
+        assertTrue(store.avatarSeed.isNotBlank(), "a fresh login must own an avatar")
+
+        app.logout()
+        testScheduler.runCurrent()
+        assertEquals("", store.avatarSeed)
+        assertTrue(store.ensureAvatarSeed())
+        assertNotEquals("", store.avatarSeed)
     }
 
     @Test
     fun cancellingSchoolSelectionReturnsToOfflineTimetable() = runTest {
         val platform = OnboardingPlatform()
         TimetableSession(platform).apply { accept(snapshot()); confirm("2026-08-31") }
-        val app = AppController(platform, backgroundScope)
+        val app = controller(platform, backgroundScope)
         app.openSchools()
         app.back()
         assertEquals(Route.Home, app.route)
@@ -86,7 +115,7 @@ class AppControllerTest {
     @Test
     fun leavingLoginCancelsPendingSessionRestore() = runTest {
         val preparation = CompletableDeferred<LoginPreparation>()
-        val app = AppController(OnboardingPlatform(preparation), this)
+        val app = controller(OnboardingPlatform(preparation), this)
         app.openSchools()
         app.selectSchool()
         app.prepare()
@@ -103,18 +132,18 @@ class AppControllerTest {
     fun importedButUnconfirmedTimetableResumesDateSetup() = runTest {
         val platform = OnboardingPlatform()
         TimetableSession(platform).accept(snapshot())
-        assertEquals(Route.Semester, AppController(platform, backgroundScope).route)
+        assertEquals(Route.Semester, controller(platform, backgroundScope).route)
     }
 
     @Test
     fun logoutClearsLocalTimetableAndRestartsWelcome() = runTest {
         val platform = OnboardingPlatform()
         TimetableSession(platform).apply { accept(snapshot()); confirm("2026-08-31") }
-        val app = AppController(platform, this)
+        val app = controller(platform, this)
         app.logout()
         testScheduler.runCurrent()
         assertEquals("Welcome", app.route.name)
-        assertNull(AppController(platform, backgroundScope).timetable.snapshot)
+        assertNull(controller(platform, backgroundScope).timetable.snapshot)
         assertNull(platform.readSetting("koma.startDate"))
     }
 }

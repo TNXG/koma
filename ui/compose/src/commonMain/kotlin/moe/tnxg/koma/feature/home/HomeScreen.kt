@@ -1,6 +1,8 @@
 package moe.tnxg.koma.feature.home
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -28,7 +30,13 @@ import moe.tnxg.koma.feature.home.date.DateIsland
 import moe.tnxg.koma.feature.home.date.ISLAND_MAX_HEIGHT
 import moe.tnxg.koma.feature.home.dock.HomeDock
 import moe.tnxg.koma.feature.home.header.*
-import moe.tnxg.koma.feature.home.profile.MeDrawer
+import moe.tnxg.koma.feature.home.profile.ProfileDestinationHost
+import moe.tnxg.koma.feature.home.profile.MePage
+import moe.tnxg.koma.feature.home.profile.parent
+import moe.tnxg.koma.app.preferences.PreferenceStore
+import moe.tnxg.koma.app.preferences.HomeDestination
+import moe.tnxg.koma.platform.NotificationService
+import moe.tnxg.koma.ui.platform.PlatformBackHandler
 import moe.tnxg.koma.feature.home.timeline.*
 import moe.tnxg.koma.ui.theme.KomaTheme
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -38,7 +46,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import moe.tnxg.koma.feature.home.week.WeekScreen
 
 @Composable
-fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,onReimport:()->Unit,onEditStart:()->Unit,onLogout:()->Unit) {
+fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,store:PreferenceStore,notifications:NotificationService?,
+    onReimport:()->Unit,onEditStart:()->Unit,onLogout:()->Unit) {
     val c=KomaTheme.colors
     val density=LocalDensity.current
     val backdrop=rememberLayerBackdrop { drawRect(c.bg);drawContent() }
@@ -51,13 +60,21 @@ fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,onReimport:()->Unit,o
     val termEnd=remember(termStart,snapshot.semester.totalWeeks){addDays(termStart,snapshot.semester.totalWeeks*7-1)}
     fun clamp(date:LocalDate)=date.coerceIn(termStart,termEnd)
     var selected by remember(snapshot,startDate){mutableStateOf(clamp(todayDate))}
-    var weekly by rememberSaveable { mutableStateOf(false) }
+    val prefs=store.value
+    var weekly by rememberSaveable { mutableStateOf(prefs.defaultHome==HomeDestination.Week) }
     val pages=rememberPagerState(initialPage=if(weekly)1 else 0,pageCount={2})
     val dockBackdrop=rememberLayerBackdrop{drawRect(c.bg);drawContent()}
     var weekRecenter by remember{mutableIntStateOf(0)}
     var weekOverlay by remember{mutableStateOf(false)}
-    LaunchedEffect(weekly){pages.animateScrollToPage(if(weekly)1 else 0,animationSpec=spring(1f,1000f))}
-    var profile by remember {mutableStateOf(false)}
+    LaunchedEffect(weekly) {
+        if(prefs.reduceMotion) pages.scrollToPage(if(weekly)1 else 0)
+        else pages.animateScrollToPage(if(weekly)1 else 0,animationSpec=spring(1f,1000f))
+    }
+    var profile by rememberSaveable { mutableStateOf(prefs.defaultHome==HomeDestination.Me) }
+    var profilePage by rememberSaveable { mutableStateOf(MePage.Main) }
+    PlatformBackHandler(profile) {
+        if(profilePage!=MePage.Main) profilePage=profilePage.parent() else profile=false
+    }
     var calendar by remember {mutableStateOf(false)}
     var recenter by remember {mutableIntStateOf(0)}
     val enter=remember{Animatable(1f)}
@@ -94,33 +111,41 @@ fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,onReimport:()->Unit,o
         jumpJob?.cancel()
         jumpJob=scope.launch {
             scroll.navigation.run {
-                if(changed)launch {enter.snapTo(.7f);enter.animateTo(1f,tween(180,easing=CubicBezierEasing(.22f,.9f,.24f,1f)))}
-                scroll.jump(anchors[next.toString()]?:next.toString(),true)
+                if(changed && !prefs.reduceMotion)launch {enter.snapTo(.7f);enter.animateTo(1f,tween(180,easing=CubicBezierEasing(.22f,.9f,.24f,1f)))}
+                scroll.jump(anchors[next.toString()]?:next.toString(),!prefs.reduceMotion)
             }
         }
     }
     Box(Modifier.fillMaxSize().background(c.bg)) {
-        HorizontalPager(pages,Modifier.fillMaxSize().zIndex(if(weekly && weekOverlay)1f else 0f)
-            .layerBackdrop(dockBackdrop),userScrollEnabled=false){page->
+        Box(Modifier.fillMaxSize().layerBackdrop(dockBackdrop)) {
+        HorizontalPager(pages,Modifier.fillMaxSize().zIndex(if(!profile && weekly && weekOverlay)1f else 0f),
+            userScrollEnabled=false){page->
             if(page==0)Box(Modifier.fillMaxSize()){
                 HomeTimeline(blocks,scroll,minutes,selected==todayDate,backdrop)
                 HomeHeader(snapshot,startDate,selected,todayDate,minutes,scroll,layer){enter.value}
-                BoxWithConstraints(Modifier.fillMaxSize()){
+                // Hidden edge controls must not exclude the system back gesture over profile pages.
+                if(!profile) BoxWithConstraints(Modifier.fillMaxSize()){
                     val islandHeight=if(ISLAND_MAX_HEIGHT<maxHeight*.44f)ISLAND_MAX_HEIGHT else maxHeight*.44f
                     DateIsland(days,counts,selected,todayDate,recenter,islandHeight,::jump,{calendar=true},layer,
                         Modifier.align(Alignment.BottomEnd).padding(bottom=maxHeight*.22f).navigationBarsPadding())
                 }
             }else{
-                WeekScreen(snapshot,startDate,selected,todayDate,minutes,{if(weekly)selected=clamp(it)},
-                    {weekly=false;jump(it)},{weekly=false;jump(todayDate)},weekly,weekRecenter,{weekOverlay=it})
+                WeekScreen(snapshot,startDate,selected,todayDate,minutes,{if(weekly && !profile)selected=clamp(it)},
+                    {profile=false;weekly=false;jump(it)},{profile=false;weekly=false;jump(todayDate)},weekly && !profile,weekRecenter,{weekOverlay=it})
             }
         }
-        HomeDock(weekly,{weekly=false;jump(todayDate)},
-            {jumpJob?.cancel();if(weekly)weekRecenter++ else{weekRecenter=0;weekly=true}},{profile=true},
+        if(profile) Box(Modifier.fillMaxSize().zIndex(2f).background(c.bg)
+            .clickable(remember { MutableInteractionSource() }, indication=null) {}) {
+            ProfileDestinationHost(profilePage,store,snapshot,startDate,notifications,
+                {profilePage=it},onEditStart,onReimport,onLogout)
+        }
+        }
+        if(!profile || profilePage==MePage.Main) HomeDock(if(profile)2 else if(weekly)1 else 0,
+            {profile=false;weekly=false;jump(todayDate)},
+            {profile=false;jumpJob?.cancel();if(weekly)weekRecenter++ else{weekRecenter=0;weekly=true}},
+            {profile=true;profilePage=MePage.Main},
             Modifier.align(Alignment.BottomCenter),page=dockBackdrop)
         DateSheet(calendar,selected,{jump(it);calendar=false},{calendar=false},"选一天，跳到那天的课程")
-        MeDrawer(profile,snapshot.studentName,snapshot.semester.name,startDate,{profile=false},
-            {profile=false;onReimport()},{profile=false;onEditStart()},{profile=false;onLogout()})
     }
 }
 
