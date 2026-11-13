@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 自适应图标前景层：节次格拼出的 K，组变换与 app/icon.svg 一致。
+     内容框 42dp 居中于 108dp 画布，外接圆半径 29.7dp，落在 66dp 安全圆内。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.075"
+        android:scaleY="0.075"
+        android:translateX="15.6"
+        android:translateY="15.6">
+        <!-- 空白节次 -->
+        <path
+            android:fillColor="#FFEEF0FC"
+            android:pathData="M454,232H570A26,26 0,0 1,596,258V296A26,26 0,0 1,570,322H454A26,26 0,0 1,428,296V258A26,26 0,0 1,454,232Z" />
+        <path
+            android:fillColor="#FFEEF0FC"
+            android:pathData="M454,350H570A26,26 0,0 1,596,376V414A26,26 0,0 1,570,440H454A26,26 0,0 1,428,414V376A26,26 0,0 1,454,350Z" />
+        <path
+            android:fillColor="#FFEEF0FC"
+            android:pathData="M454,584H570A26,26 0,0 1,596,610V648A26,26 0,0 1,570,674H454A26,26 0,0 1,428,648V610A26,26 0,0 1,454,584Z" />
+        <path
+            android:fillColor="#FFEEF0FC"
+            android:pathData="M454,702H570A26,26 0,0 1,596,728V766A26,26 0,0 1,570,792H454A26,26 0,0 1,428,766V728A26,26 0,0 1,454,702Z" />
+        <path
+            android:fillColor="#FFEEF0FC"
+            android:pathData="M650,467H766A26,26 0,0 1,792,493V531A26,26 0,0 1,766,557H650A26,26 0,0 1,624,531V493A26,26 0,0 1,650,467Z" />
+
+        <!-- 已排课程，构成 K -->
+        <path android:pathData="M266,232H366A34,34 0,0 1,400,266V758A34,34 0,0 1,366,792H266A34,34 0,0 1,232,758V266A34,34 0,0 1,266,232Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:startX="232"
+                    android:startY="232"
+                    android:endX="232"
+                    android:endY="792"
+                    android:type="linear">
+                    <item android:color="#FF5D69E0" android:offset="0.0" />
+                    <item android:color="#FF4450C8" android:offset="1.0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path
+            android:fillColor="#FF8A93E5"
+            android:pathData="M454,467H570A26,26 0,0 1,596,493V531A26,26 0,0 1,570,557H454A26,26 0,0 1,428,531V493A26,26 0,0 1,454,467Z" />
+        <path
+            android:fillColor="#FF7A6BD0"
+            android:pathData="M658,232H758A34,34 0,0 1,792,266V406A34,34 0,0 1,758,440H658A34,34 0,0 1,624,406V266A34,34 0,0 1,658,232Z" />
+        <path
+            android:fillColor="#FF5574D8"
+            android:pathData="M658,584H758A34,34 0,0 1,792,618V758A34,34 0,0 1,758,792H658A34,34 0,0 1,624,758V618A34,34 0,0 1,658,584Z" />
+
+        <!-- 课程标题条 -->
+        <path
+            android:fillAlpha="0.85"
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M272,266H328A8,8 0,0 1,328,282H272A8,8 0,0 1,272,266Z" />
+        <path
+            android:fillAlpha="0.85"
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M664,266H712A8,8 0,0 1,712,282H664A8,8 0,0 1,664,266Z" />
+        <path
+            android:fillAlpha="0.85"
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M664,618H712A8,8 0,0 1,712,634H664A8,8 0,0 1,664,618Z" />
+    </group>
+</vector>

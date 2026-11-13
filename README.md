@@ -73,7 +73,7 @@ UI 使用 Foundation 自定义布局与绘制，沿用 Capacitor 的亮暗配色
 
 周数选择月历的底部使用由清晰到模糊的渐进遮罩，采样月历自身底部内容并随弹层移动；周课表底栏不添加渐隐背景。
 
-图标：`ui/component/icon/KomaGlyph.kt` 保存原 MingCute SVG 路径，`KomaIcon.kt` 将路径绘制为原生 Compose `ImageVector`，统一处理颜色和无障碍说明；没有图标字体、emoji 替代或 Material 图标依赖。启动图标沿用原 Android 资源。字体与图标许可随资源放在 `composeResources/files/licenses/`。
+图标：`ui/component/icon/KomaGlyph.kt` 保存原 MingCute SVG 路径，`KomaIcon.kt` 将路径绘制为原生 Compose `ImageVector`，统一处理颜色和无障碍说明；没有图标字体、emoji 替代或 Material 图标依赖。启动图标为自适应图标：`app/icon.svg` 是 108dp 画布的设计源，前景组与 `res/drawable/ic_launcher_foreground.xml` 共用坐标（节次格拼出 K，内容框 42dp，落在 66dp 安全圆内），背景为白到 `#F2F2F1` 的竖向渐变，`ic_launcher_monochrome.xml` 供主题图标单色着色。minSdk 为 29，`mipmap-anydpi-v26` 是唯一生效的图标资源，不再保留各密度 PNG。字体与图标许可随资源放在 `composeResources/files/licenses/`。
 
 应用 ID 保持 `moe.tnxg.koma`。原凭据 Keystore 别名、偏好文件和通知渠道保持兼容。首次启动在读取课表前，从原 `https://localhost/` WebView 存储提取 `koma.snapshot` 与 `koma.startDate`，写入成功才记录迁移完成；不删除原 localStorage。WebView 仅用于一次性升级数据读取，不承载界面。
 

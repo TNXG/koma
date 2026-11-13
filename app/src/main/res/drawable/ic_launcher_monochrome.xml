@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 主题图标单色层：形状由系统着色，空白节次保留低不透明度的网格结构。
+     坐标与 ic_launcher_foreground.xml 一致。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.075"
+        android:scaleY="0.075"
+        android:translateX="15.6"
+        android:translateY="15.6">
+        <group android:fillAlpha="0.38">
+            <path
+                android:fillColor="#FFFFFFFF"
+                android:pathData="M454,232H570A26,26 0,0 1,596,258V296A26,26 0,0 1,570,322H454A26,26 0,0 1,428,296V258A26,26 0,0 1,454,232Z" />
+            <path
+                android:fillColor="#FFFFFFFF"
+                android:pathData="M454,350H570A26,26 0,0 1,596,376V414A26,26 0,0 1,570,440H454A26,26 0,0 1,428,414V376A26,26 0,0 1,454,350Z" />
+            <path
+                android:fillColor="#FFFFFFFF"
+                android:pathData="M454,584H570A26,26 0,0 1,596,610V648A26,26 0,0 1,570,674H454A26,26 0,0 1,428,648V610A26,26 0,0 1,454,584Z" />
+            <path
+                android:fillColor="#FFFFFFFF"
+                android:pathData="M454,702H570A26,26 0,0 1,596,728V766A26,26 0,0 1,570,792H454A26,26 0,0 1,428,766V728A26,26 0,0 1,454,702Z" />
+            <path
+                android:fillColor="#FFFFFFFF"
+                android:pathData="M650,467H766A26,26 0,0 1,792,493V531A26,26 0,0 1,766,557H650A26,26 0,0 1,624,531V493A26,26 0,0 1,650,467Z" />
+        </group>
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M266,232H366A34,34 0,0 1,400,266V758A34,34 0,0 1,366,792H266A34,34 0,0 1,232,758V266A34,34 0,0 1,266,232Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M454,467H570A26,26 0,0 1,596,493V531A26,26 0,0 1,570,557H454A26,26 0,0 1,428,531V493A26,26 0,0 1,454,467Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M658,232H758A34,34 0,0 1,792,266V406A34,34 0,0 1,758,440H658A34,34 0,0 1,624,406V266A34,34 0,0 1,658,232Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M658,584H758A34,34 0,0 1,792,618V758A34,34 0,0 1,758,792H658A34,34 0,0 1,624,758V618A34,34 0,0 1,658,584Z" />
+    </group>
+</vector>
