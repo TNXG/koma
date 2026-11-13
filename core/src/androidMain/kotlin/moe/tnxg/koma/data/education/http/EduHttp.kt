@@ -12,6 +12,19 @@ internal data class HttpResult(val status: Int, val url: HttpUrl, val headers: H
     val text: String get() = bytes.toString(Charsets.UTF_8)
 }
 
+/** Carries the rejected response so the login layer can show the server's own reason. */
+internal class EduHttpException(val status: Int, val url: HttpUrl, val body: String) :
+    IOException(httpStatusText(status))
+
+private fun httpStatusText(status: Int): String = when (status) {
+    401, 403 -> "登录已失效，请重新登录"
+    404 -> "教务接口不存在，请更新应用后重试"
+    423 -> "登录被暂时锁定，请稍后重试"
+    429 -> "请求太频繁，请稍后重试"
+    in 500..599 -> "教务服务暂时不可用，请稍后重试"
+    else -> "教务请求没有完成，请稍后重试"
+}
+
 internal class EduHttp(private val client: OkHttpClient) {
     suspend fun call(url: String, body: RequestBody? = null, headers: Map<String, String> = emptyMap()): HttpResult {
         val target = url.toHttpUrl()
@@ -33,7 +46,8 @@ internal class EduHttp(private val client: OkHttpClient) {
                     try {
                         val result = response.use { HttpResult(it.code, it.request.url, it.headers, it.body?.bytes() ?: byteArrayOf()) }
                         if (continuation.isActive) {
-                            if (result.status >= 400) continuation.resumeWithException(IOException("教务服务没有响应（${result.status}），请稍后重试"))
+                            if (result.status >= 400) continuation.resumeWithException(
+                                EduHttpException(result.status, result.url, result.text))
                             else continuation.resume(result)
                         }
                     } catch (error: Exception) {

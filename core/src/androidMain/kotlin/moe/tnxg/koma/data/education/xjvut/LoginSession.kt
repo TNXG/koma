@@ -2,6 +2,7 @@ package moe.tnxg.koma.data.education.xjvut
 
 import java.io.IOException
 import java.util.Base64
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.*
 import moe.tnxg.koma.data.education.*
 import moe.tnxg.koma.data.education.cas.*
@@ -24,10 +25,14 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
         key = null
         if (restore()) return LoginPreparation.Ready
         vault.clear()
-        val page = http.follow(Endpoints.LOGIN)
-        key = loadPublicKey(page.text)
-        val status = http.call("${Endpoints.CAS}/cas/getKaptchaStatus")
-        return LoginPreparation.Form(if (status.text.contains("true", ignoreCase = true)) refreshCaptcha() else null)
+        try {
+            val page = http.follow(Endpoints.LOGIN)
+            key = loadPublicKey(page.text)
+            val status = http.call("${Endpoints.CAS}/cas/getKaptchaStatus")
+            return LoginPreparation.Form(if (status.text.contains("true", ignoreCase = true)) refreshCaptcha() else null)
+        } catch (error: EduHttpException) {
+            throw IOException(explain(error), error)
+        }
     }
 
     private suspend fun loadPublicKey(html: String): PublicKey {
@@ -57,7 +62,16 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
             .add("code", "").add("authcode", captcha).add("execution", public.execution)
             .add("_eventId", "submit").add("type", "zhmm").build()
         key = null
-        val response = http.follow(Endpoints.LOGIN, body, mapOf("Referer" to Endpoints.LOGIN))
+        val response = try {
+            http.follow(Endpoints.LOGIN, body, mapOf("Referer" to Endpoints.LOGIN))
+        } catch (error: EduHttpException) {
+            // A rejected login is still a login failure: keep a usable form and say why.
+            ready = false
+            key = try { loadPublicKey(http.follow(Endpoints.LOGIN).text) }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { null }
+            return LoginResult(false, explain(error))
+        }
         if (extractExecution(response.text) != null) {
             val raw = casErrorText(response.text)
             ready = false
@@ -69,6 +83,20 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
             return LoginResult(false, "教务登录没接上，请重试")
         }
         return LoginResult(true)
+    }
+
+    /** Prefer the reason the auth server rendered; fall back to what the status itself means. */
+    private fun explain(error: EduHttpException): String {
+        val text = casErrorText(error.body)
+        if (text.isNotEmpty()) return describeCasError(text)
+        return when (error.status) {
+            401, 403 -> "账号或密码不对"
+            423 -> "登录被暂时锁定，请稍后重试"
+            429 -> "登录太频繁，请稍后重试"
+            404 -> "教务登录页已更新，请更新应用后重试"
+            in 500..599 -> "教务服务暂时不可用，请稍后重试"
+            else -> "登录没有完成，请稍后重试"
+        }
     }
     fun invalidate() { ready = false; key = null }
     fun reset() { invalidate(); vault.clear() }
