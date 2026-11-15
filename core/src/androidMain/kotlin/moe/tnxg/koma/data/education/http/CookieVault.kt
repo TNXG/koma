@@ -40,9 +40,9 @@ internal class CookieVault(
     init { load() }
 
     @Synchronized override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-        if (!allowed(url.host)) return
+        if (!url.isHttps || !allowed(url.host)) return
         for (cookie in cookies) {
-            if (!allowed(cookie.domain)) continue
+            if (!allowed(cookie.domain) || cookie.domain != url.host) continue
             this.cookies.removeAll { it.name == cookie.name && it.domain == cookie.domain && it.path == cookie.path }
             if (cookie.expiresAt > System.currentTimeMillis()) this.cookies += cookie
         }
@@ -50,7 +50,7 @@ internal class CookieVault(
     }
     @Synchronized override fun loadForRequest(url: HttpUrl): List<Cookie> {
         cookies.removeAll { it.expiresAt <= System.currentTimeMillis() }
-        if (!allowed(url.host)) return emptyList()
+        if (!url.isHttps || !allowed(url.host)) return emptyList()
         return cookies.filter { it.matches(url) }.sortedByDescending { it.path.length }
     }
     @Synchronized fun clear() { cookies.clear(); persist() }

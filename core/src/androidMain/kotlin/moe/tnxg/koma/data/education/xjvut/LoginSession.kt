@@ -18,7 +18,20 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
         private set
 
     suspend fun restore(): Boolean {
-        ready = Endpoints.isIndex(http.follow(Endpoints.SSO).url)
+        ready = false
+        val entry = http.follow(Endpoints.SSO, stopAt = Endpoints::isLogin)
+        if (Endpoints.isIndex(entry.url)) {
+            ready = true
+            return true
+        }
+        val cas = entry.headers["Location"]?.let(entry.url::resolve)?.takeIf(Endpoints::isLogin) ?: return false
+        // A service redirect is not proof of an authenticated CAS session. Probe
+        // without service first: a login execution means credentials are needed,
+        // not that an SSO ticket cycle should be followed until its hop limit.
+        val probe = http.follow(Endpoints.LOGIN)
+        if (extractExecution(probe.text) != null) return false
+        // Existing CAS-only sessions must still be able to mint a JW service ticket.
+        ready = Endpoints.isIndex(http.follow(cas.toString()).url)
         return ready
     }
     suspend fun prepare(): LoginPreparation {

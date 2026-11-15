@@ -10,6 +10,8 @@ internal object Endpoints {
     const val COURSES = "$JW/jwglxt/kbcx/xskbcxMobile_cxXsKb.html"
     const val WEEKS = "$JW/jwglxt/kbcx/xskbcxMobile_cxZc.html"
     const val TIMES = "$JW/jwglxt/kbcx/xskbcx_cxRjc.html?gnmkdm=N2151"
+    fun isLogin(url: HttpUrl): Boolean = url.isHttps && url.host == "qyrz.xjvut.edu.cn" && url.port == 443 &&
+        url.encodedPath == "/cas/login"
     fun isIndex(url: HttpUrl): Boolean = url.isHttps && url.host == "jw.xjvut.edu.cn" && url.port == 6082 &&
         url.encodedPath.endsWith("/xskbcxMobile_cxXskbcxIndex.html")
 }
