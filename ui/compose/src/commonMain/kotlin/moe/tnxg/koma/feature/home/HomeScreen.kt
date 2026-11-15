@@ -1,8 +1,6 @@
 package moe.tnxg.koma.feature.home
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -14,7 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
-import androidx.compose.animation.core.spring
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -44,6 +41,8 @@ import androidx.compose.ui.graphics.layer.GraphicsLayer
 import moe.tnxg.koma.feature.home.scroll.HomeScrollState
 import androidx.compose.runtime.saveable.rememberSaveable
 import moe.tnxg.koma.feature.home.week.WeekScreen
+import moe.tnxg.koma.ui.component.page.LocalPageActive
+import moe.tnxg.koma.ui.component.page.pageAnimationSpec
 
 @Composable
 fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,store:PreferenceStore,notifications:NotificationService?,
@@ -62,16 +61,17 @@ fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,store:PreferenceStore
     var selected by remember(snapshot,startDate){mutableStateOf(clamp(todayDate))}
     val prefs=store.value
     var weekly by rememberSaveable { mutableStateOf(prefs.defaultHome==HomeDestination.Week) }
-    val pages=rememberPagerState(initialPage=if(weekly)1 else 0,pageCount={2})
+    var profile by rememberSaveable { mutableStateOf(prefs.defaultHome==HomeDestination.Me) }
+    var profilePage by rememberSaveable { mutableStateOf(MePage.Main) }
+    val targetPage=if(profile)2 else if(weekly)1 else 0
+    val pages=rememberPagerState(initialPage=targetPage,pageCount={3})
     val dockBackdrop=rememberLayerBackdrop{drawRect(c.bg);drawContent()}
     var weekRecenter by remember{mutableIntStateOf(0)}
     var weekOverlay by remember{mutableStateOf(false)}
-    LaunchedEffect(weekly) {
-        if(prefs.reduceMotion) pages.scrollToPage(if(weekly)1 else 0)
-        else pages.animateScrollToPage(if(weekly)1 else 0,animationSpec=spring(1f,1000f))
+    LaunchedEffect(targetPage,prefs.reduceMotion) {
+        if(prefs.reduceMotion) pages.scrollToPage(targetPage)
+        else pages.animateScrollToPage(targetPage,animationSpec=pageAnimationSpec(false))
     }
-    var profile by rememberSaveable { mutableStateOf(prefs.defaultHome==HomeDestination.Me) }
-    var profilePage by rememberSaveable { mutableStateOf(MePage.Main) }
     PlatformBackHandler(profile) {
         if(profilePage!=MePage.Main) profilePage=profilePage.parent() else profile=false
     }
@@ -119,7 +119,7 @@ fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,store:PreferenceStore
     Box(Modifier.fillMaxSize().background(c.bg)) {
         Box(Modifier.fillMaxSize().layerBackdrop(dockBackdrop)) {
         HorizontalPager(pages,Modifier.fillMaxSize().zIndex(if(!profile && weekly && weekOverlay)1f else 0f),
-            userScrollEnabled=false){page->
+            userScrollEnabled=false,beyondViewportPageCount=2){page->
             if(page==0)Box(Modifier.fillMaxSize()){
                 HomeTimeline(blocks,scroll,minutes,selected==todayDate,backdrop)
                 HomeHeader(snapshot,startDate,selected,todayDate,minutes,scroll,layer){enter.value}
@@ -129,15 +129,15 @@ fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,store:PreferenceStore
                     DateIsland(days,counts,selected,todayDate,recenter,islandHeight,::jump,{calendar=true},layer,
                         Modifier.align(Alignment.BottomEnd).padding(bottom=maxHeight*.22f).navigationBarsPadding())
                 }
-            }else{
+            }else if(page==1){
                 WeekScreen(snapshot,startDate,selected,todayDate,minutes,{if(weekly && !profile)selected=clamp(it)},
                     {profile=false;weekly=false;jump(it)},{profile=false;weekly=false;jump(todayDate)},weekly && !profile,weekRecenter,{weekOverlay=it})
+            }else{
+                CompositionLocalProvider(LocalPageActive provides profile) {
+                    ProfileDestinationHost(profilePage,store,snapshot,startDate,notifications,
+                        {profilePage=it},onEditStart,onReimport,onLogout)
+                }
             }
-        }
-        if(profile) Box(Modifier.fillMaxSize().zIndex(2f).background(c.bg)
-            .clickable(remember { MutableInteractionSource() }, indication=null) {}) {
-            ProfileDestinationHost(profilePage,store,snapshot,startDate,notifications,
-                {profilePage=it},onEditStart,onReimport,onLogout)
         }
         }
         if(!profile || profilePage==MePage.Main) HomeDock(if(profile)2 else if(weekly)1 else 0,

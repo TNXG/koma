@@ -8,6 +8,7 @@ import moe.tnxg.koma.domain.model.TimetableSnapshot
 import moe.tnxg.koma.feature.settings.SettingsPage
 import moe.tnxg.koma.feature.settings.SettingsScreen
 import moe.tnxg.koma.platform.NotificationService
+import moe.tnxg.koma.ui.component.page.PageTransition
 
 internal enum class MePage {
     Main,
@@ -44,39 +45,47 @@ internal fun ProfileDestinationHost(
     onLogout: () -> Unit,
 ) {
     LaunchedEffect(store) { store.ensureAvatarSeed() }
-    val back = { onPage(page.parent()) }
     val pages = rememberSaveableStateHolder()
-    pages.SaveableStateProvider(page.name) {
-        when (page) {
-            MePage.Main -> MeScreen(
-                snapshot = snapshot,
-                startDate = startDate,
-                store = store,
-                onProfile = { onPage(MePage.Profile) },
-                onSemester = { onPage(MePage.Semester) },
-                onAccount = { onPage(MePage.Account) },
-                onSettings = { onPage(MePage.Settings) },
-                onAbout = { onPage(MePage.About) },
-            )
-            MePage.Profile -> ProfileScreen(store, back)
-            MePage.Semester -> SemesterInfoScreen(snapshot, startDate, back, onEditStart)
-            MePage.Account -> AccountScreen(snapshot, back, onReimport, onLogout)
-            MePage.About -> AboutScreen(
-                onBack = back,
-                onLicenses = { onPage(MePage.Licenses) },
-                onPrivacy = { onPage(MePage.Privacy) },
-            )
-            MePage.Licenses -> LicensesScreen(back)
-            MePage.Privacy -> PrivacyScreen(notifications, back)
-            else -> SettingsScreen(
-                page = if (page == MePage.Settings) SettingsPage.Main else SettingsPage.valueOf(page.name),
-                store = store,
-                snapshot = snapshot,
-                startDate = startDate,
-                notifications = notifications,
-                onPage = { onPage(if (it == SettingsPage.Main) MePage.Settings else MePage.valueOf(it.name)) },
-                onBack = back,
-            )
+    PageTransition(page, depth = {
+        when {
+            it == MePage.Main -> 0
+            it.parent() == MePage.Main -> 1
+            else -> 2
+        }
+    }) { current ->
+        val back = { onPage(current.parent()) }
+        pages.SaveableStateProvider(current.name) {
+            when (current) {
+                MePage.Main -> MeScreen(
+                    snapshot = snapshot,
+                    startDate = startDate,
+                    store = store,
+                    onProfile = { onPage(MePage.Profile) },
+                    onSemester = { onPage(MePage.Semester) },
+                    onAccount = { onPage(MePage.Account) },
+                    onSettings = { onPage(MePage.Settings) },
+                    onAbout = { onPage(MePage.About) },
+                )
+                MePage.Profile -> ProfileScreen(store, back)
+                MePage.Semester -> SemesterInfoScreen(snapshot, startDate, back, onEditStart)
+                MePage.Account -> AccountScreen(snapshot, back, onReimport, onLogout)
+                MePage.About -> AboutScreen(
+                    onBack = back,
+                    onLicenses = { onPage(MePage.Licenses) },
+                    onPrivacy = { onPage(MePage.Privacy) },
+                )
+                MePage.Licenses -> LicensesScreen(back)
+                MePage.Privacy -> PrivacyScreen(notifications, back)
+                else -> SettingsScreen(
+                    page = if (current == MePage.Settings) SettingsPage.Main else SettingsPage.valueOf(current.name),
+                    store = store,
+                    snapshot = snapshot,
+                    startDate = startDate,
+                    notifications = notifications,
+                    onPage = { onPage(if (it == SettingsPage.Main) MePage.Settings else MePage.valueOf(it.name)) },
+                    onBack = back,
+                )
+            }
         }
     }
 }

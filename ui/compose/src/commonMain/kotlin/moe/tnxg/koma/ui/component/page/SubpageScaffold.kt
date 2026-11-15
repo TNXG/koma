@@ -55,12 +55,13 @@ fun SubpageScaffold(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = KomaTheme.colors
-    PlatformBackHandler(enabled = true, onBack = onBack)
+    val active = LocalPageActive.current
+    PlatformBackHandler(enabled = active, onBack = onBack)
     Box(Modifier.fillMaxSize().background(c.bg)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .swipeBackToPop(onBack)
+                .swipeBackToPop(onBack, enabled = active)
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .imePadding(),
