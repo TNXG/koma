@@ -13,6 +13,10 @@ import moe.tnxg.koma.data.education.LoginPreparation
 import moe.tnxg.koma.domain.captcha.captchaAnswer
 import moe.tnxg.koma.platform.PlatformServices
 import moe.tnxg.koma.platform.SavedCredentials
+import kotlinx.datetime.Clock
+import androidx.compose.runtime.staticCompositionLocalOf
+
+val LocalAppController = staticCompositionLocalOf<AppController> { error("AppController not provided") }
 
 enum class Route { Welcome, Schools, Login, Semester, Home }
 enum class LoginPhase { Idle, Preparing, Form, LoggingIn, Importing, Error }
@@ -42,11 +46,62 @@ class AppController(
     var captchaInput by mutableStateOf("")
     var rememberPassword by mutableStateOf(true)
     private var operation: Job? = null
+    var autoUpdate by mutableStateOf(platform.readSetting("koma.autoUpdate") != "false")
+        private set
+    var syncStatus by mutableStateOf("")
+        private set
+    var syncNeedsLogin by mutableStateOf(false)
+        private set
+    private var lastAutoAttempt = platform.readSetting("koma.lastAutoAttempt")?.toLongOrNull()
+    var showSyncConflicts by mutableStateOf(true)
+    private var backgroundSync = false
+    val syncing: Boolean get() = operation?.isActive == true && route == Route.Home
+
+    fun updateAutoUpdate(enabled: Boolean) {
+        platform.writeSetting("koma.autoUpdate", enabled.toString())
+        autoUpdate = enabled
+    }
+
+    /** Foreground-only, at most once per day, including failed attempts. */
+    fun autoUpdateIfDue(now: Long = Clock.System.now().epochSeconds) {
+        if (!autoUpdate || !timetable.configured || route != Route.Home || operation?.isActive == true) return
+        val last = lastAutoAttempt
+        if (last != null && now >= last && now - last < 86_400) return
+        platform.writeSetting("koma.lastAutoAttempt", now.toString())
+        lastAutoAttempt = now
+        syncNow(automatic = true)
+    }
+
+    fun syncNow(automatic: Boolean = false) {
+        if (operation?.isActive == true) return
+        runOperation {
+            backgroundSync = automatic
+            syncStatus = "正在更新课表…"
+            syncNeedsLogin = false
+            try {
+                prepareLogin()
+                if (phase == LoginPhase.Form) {
+                    syncNeedsLogin = true
+                    syncStatus = message.ifEmpty { "需要重新验证教务账号" }
+                    if (automatic) phase = LoginPhase.Idle else route = Route.Login
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                syncStatus = failure.message ?: "自动更新失败，保留本机课表"
+                phase = LoginPhase.Idle
+            } finally {
+                backgroundSync = false
+            }
+        }
+    }
     val busy: Boolean get() = phase == LoginPhase.LoggingIn || phase == LoginPhase.Importing
     val canSubmit: Boolean get() = phase == LoginPhase.Form && username.isNotBlank() && password.isNotEmpty() &&
         (captcha == null || !manualCaptcha || captchaInput.isNotBlank())
 
-    fun prepare() = runOperation {
+    fun prepare() = runOperation { prepareLogin() }
+
+    private suspend fun prepareLogin() {
         phase = LoginPhase.Preparing
         message = ""
         when (val result = platform.edu.prepare()) {
@@ -74,7 +129,7 @@ class AppController(
         captchaInput = ""
     }
 
-    fun openSchools() { route = Route.Schools; phase = LoginPhase.Idle }
+    fun openSchools() { operation?.cancel(); route = Route.Schools; phase = LoginPhase.Idle }
 
     fun selectSchool() {
         message = ""
@@ -115,6 +170,10 @@ class AppController(
         message = ""
         phase = LoginPhase.Idle
         route = Route.Welcome
+        platform.writeSetting("koma.lastAutoAttempt", null)
+        lastAutoAttempt = null
+        syncStatus = ""
+        syncNeedsLogin = false
     }
 
     private suspend fun login() {
@@ -125,7 +184,12 @@ class AppController(
         while (true) {
             if (code == null) {
                 code = recognizeCaptcha()
-                if (code == null) { manual("验证码没认出来，请手动输入"); return }
+                if (code == null) {
+                    rounds++
+                    captcha = platform.edu.refreshCaptcha()
+                    if (rounds >= 3) { manual("自动识别已尝试 3 次，请手动输入验证码"); return }
+                    continue
+                }
             }
             val result = platform.edu.login(username.trim(), password, code)
             if (result.ok) break
@@ -164,7 +228,10 @@ class AppController(
         phase = LoginPhase.Importing
         timetable.accept(platform.edu.importTimetable())
         preferences.ensureAvatarSeed()
-        route = Route.Semester
+        syncNeedsLogin = false
+        showSyncConflicts = true
+        syncStatus = "课表已更新"
+        if (!backgroundSync) route = if (timetable.configured) Route.Home else Route.Semester
         phase = LoginPhase.Idle
     }
 

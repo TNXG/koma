@@ -46,6 +46,9 @@ import moe.tnxg.koma.ui.component.sheet.KomaSheet
 import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.platform.PlatformBackHandler
 import moe.tnxg.koma.ui.theme.KomaTheme
+import moe.tnxg.koma.app.state.LocalAppController
+import moe.tnxg.koma.app.state.SyncConflictSheet
+import moe.tnxg.koma.ui.platform.PlatformForeground
 
 @Composable
 fun KomaApp(platform: PlatformServices) {
@@ -93,6 +96,8 @@ fun KomaApp(platform: PlatformServices) {
                         else KomaButton("读取失败，重试", { attempt++ })
                     }
                 } else {
+                    CompositionLocalProvider(LocalAppController provides app) {
+                    PlatformForeground { app.autoUpdateIfDue() }
                     PlatformBackHandler(app.canGoBack, app::back)
                     SyncCourseReminders(app.timetable.snapshot, app.timetable.startDate, preferences.value)
                     LaunchedEffect(app.route) {
@@ -112,6 +117,7 @@ fun KomaApp(platform: PlatformServices) {
                             }
                         }
                     }
+                    SyncConflictSheet(app)
                     var dismissed by remember(app.message) { mutableStateOf(false) }
                     KomaSheet(
                         open = app.route == Route.Home && app.phase == LoginPhase.Error && !dismissed,
@@ -121,6 +127,7 @@ fun KomaApp(platform: PlatformServices) {
                             KomaText(app.message)
                             KomaButton("关闭", { dismissed = true })
                         }
+                    }
                     }
                 }
             }

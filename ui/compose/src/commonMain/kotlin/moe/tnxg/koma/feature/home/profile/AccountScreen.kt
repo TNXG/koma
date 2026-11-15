@@ -14,6 +14,8 @@ import moe.tnxg.koma.ui.component.list.SettingsSection
 import moe.tnxg.koma.ui.component.page.SubpageScaffold
 import moe.tnxg.koma.ui.component.sheet.ConfirmSheet
 import moe.tnxg.koma.ui.theme.KomaTheme
+import moe.tnxg.koma.app.state.LocalAppController
+import moe.tnxg.koma.ui.component.list.SettingsSwitchRow
 
 private fun schoolNameOf(schoolId: String): String = when (schoolId) {
     "xjvut" -> "新疆理工职业大学"
@@ -28,6 +30,7 @@ fun AccountScreen(
     onLogout: () -> Unit,
 ) {
     val c = KomaTheme.colors
+    val app = LocalAppController.current
     var confirmLogout by remember { mutableStateOf(false) }
 
     SubpageScaffold(title = "教务账号", onBack = onBack) {
@@ -40,14 +43,14 @@ fun AccountScreen(
             SettingsDivider()
             SettingsNavRow(
                 title = "登录状态",
-                value = "已登录",
+                value = if (app.syncNeedsLogin) "需要验证" else "本机课表可用",
                 tag = snapshot.semester.name,
                 chevron = false,
             )
             SettingsDivider()
             SettingsNavRow(
                 title = "重新导入课表",
-                value = "重新验证后替换",
+                value = "保留手动调整",
                 onClick = onReimport,
             )
             SettingsDivider()
@@ -56,6 +59,26 @@ fun AccountScreen(
                 value = "系统安全存储",
                 chevron = false,
             )
+        }
+        SettingsSection("课表更新")
+        SettingsGroup {
+            SettingsSwitchRow("自动更新", app.autoUpdate, onToggle = app::updateAutoUpdate)
+            SettingsDivider()
+            SettingsNavRow("更新频率", value = "每天首次打开时", chevron = false)
+            SettingsDivider()
+            SettingsNavRow("立即更新", value = if (app.syncing) "更新中…" else "同步教务课表",
+                onClick = { app.syncNow() })
+            SettingsDivider()
+            SettingsNavRow("上次导入", value = snapshot.importedAt.substringBefore('T'), chevron = false)
+            if (app.syncStatus.isNotBlank()) {
+                SettingsDivider()
+                SettingsNavRow("更新状态", value = app.syncStatus, chevron = false)
+            }
+            if (app.timetable.conflicts.isNotEmpty()) {
+                SettingsDivider()
+                SettingsNavRow("处理同步冲突", value = "${app.timetable.conflicts.size} 项待处理",
+                    tint = c.danger, onClick = { app.showSyncConflicts = true })
+            }
         }
 
         SettingsSection("退出")
