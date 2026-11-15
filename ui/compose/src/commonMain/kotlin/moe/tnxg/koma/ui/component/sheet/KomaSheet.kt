@@ -55,10 +55,12 @@ import kotlinx.coroutines.launch
 import moe.tnxg.koma.ui.platform.PlatformBackHandler
 import moe.tnxg.koma.ui.theme.KomaTheme
 import moe.tnxg.koma.app.preferences.LocalAppPreferences
+import top.yukonga.miuix.kmp.blur.Backdrop
 
 @Composable
 fun KomaSheet(open: Boolean, onDismiss: () -> Unit, horizontalPadding: Dp = 16.dp,
-    bottomPadding: Dp = 32.dp, bottomBlur: Dp = 0.dp, content: @Composable ColumnScope.() -> Unit) {
+    bottomPadding: Dp = 32.dp, bottomBlur: Dp = 0.dp, glassBackdrop: Backdrop? = null,
+    content: @Composable ColumnScope.() -> Unit) {
     val colors = KomaTheme.colors
     val duration = if(LocalAppPreferences.current.reduceMotion) 0 else 500
     val progress = remember { Animatable(0f) }
@@ -67,6 +69,12 @@ fun KomaSheet(open: Boolean, onDismiss: () -> Unit, horizontalPadding: Dp = 16.d
     var drag by remember { mutableFloatStateOf(0f) }
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
+    val shape = remember(glassBackdrop != null) {
+        RoundedCornerShape(topStart = if (glassBackdrop != null) 26.dp else 12.dp,
+            topEnd = if (glassBackdrop != null) 26.dp else 12.dp)
+    }
+    val material = if (glassBackdrop != null) Modifier.sheetGlass(glassBackdrop, shape, colors.surface)
+        else Modifier.background(colors.surface)
     val interactions = remember { MutableInteractionSource() }
     LaunchedEffect(open) {
         if (open) mounted = true
@@ -86,8 +94,8 @@ fun KomaSheet(open: Boolean, onDismiss: () -> Unit, horizontalPadding: Dp = 16.d
                 Modifier.fillMaxWidth()
                     .onSizeChanged { height = it.height.toFloat().coerceAtLeast(1f) }
                     .graphicsLayer { translationY = height * (1 - progress.value) + drag }
-                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                    .background(colors.surface)
+                    .clip(shape)
+                    .then(material)
                     .clickable(remember { MutableInteractionSource() }, null) {}
                     .draggable(
                         state = rememberDraggableState { delta -> drag = (drag + delta).coerceAtLeast(0f) },

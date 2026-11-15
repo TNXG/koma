@@ -30,4 +30,10 @@ class CourseRemindersTest {
         assertNull(nextCourseReminder(snapshot(emptyList()), "2026-11-09",
             Instant.parse("2026-11-09T01:00:00Z"), 10, TimeZone.of("Asia/Shanghai")))
     }
+    @Test fun cancelledOccurrenceSchedulesOnlyTheNextActiveWeek() {
+        val data = snapshot(listOf(TimeSlot(1, 600, 650))).copy(courses = listOf(course.copy(suspendedWeeks = listOf(1))))
+        val next = nextCourseReminder(data, "2026-11-09",
+            Instant.parse("2026-11-09T01:00:00Z"), 10, TimeZone.of("Asia/Shanghai"))!!
+        assertEquals(Instant.parse("2026-11-16T01:50:00Z"), next.at)
+    }
 }

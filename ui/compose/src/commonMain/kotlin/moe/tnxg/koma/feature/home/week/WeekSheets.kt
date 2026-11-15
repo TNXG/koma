@@ -52,7 +52,7 @@ internal fun WeekSelector(open: Boolean, snapshot: TimetableSnapshot, startDate:
             while (day < next) {
                 val week = weekIndex(startDate, day)
                 val weekday = isoWeekday(day)
-                val n = snapshot.courses.count { it.weekday == weekday && week in it.weeks }
+                val n = snapshot.courses.count { it.weekday == weekday && courseHeldOnWeek(it, week) }
                 if (n > 0) map[day] = n
                 day = addDays(day, 1)
             }
@@ -140,46 +140,3 @@ private fun MonthBlock(month: LocalDate, startDate: LocalDate, totalWeeks: Int, 
     }
 }
 
-@Composable
-internal fun WeekCourseSheet(courses: List<Course>, date: LocalDate, timeGrid: List<TimeSlot>, onDismiss: () -> Unit) {
-    val c = KomaTheme.colors
-    var displayed by remember { mutableStateOf(courses) }
-    var displayedDate by remember { mutableStateOf(date) }
-    if (courses.isNotEmpty()) { displayed = courses; displayedDate = date }
-    val scroll = rememberScrollState()
-    LaunchedEffect(courses) { if (courses.isNotEmpty()) scroll.scrollTo(0) }
-    KomaSheet(courses.isNotEmpty(), onDismiss) {
-        Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            KomaText(if (displayed.size > 1) "重叠课程 · ${displayed.size} 门" else "课程详情", size = 19, weight = FontWeight.Bold)
-            KomaTextButton("关闭", onDismiss, Modifier.padding(8.dp), color = c.ink3)
-        }
-        KomaText("${formatMonthDay(displayedDate)} · 周${weekdayLabel(displayedDate)}", size = 12, color = c.ink3)
-        Column(Modifier.fillMaxWidth().heightIn(max = 450.dp).verticalScroll(scroll).navigationBarsPadding()
-            .padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            displayed.forEach { course ->
-                val tone = courseTone(courseVisual(course.name).tone)
-                Column(Modifier.fillMaxWidth().background(tone.copy(alpha = .08f), RoundedCornerShape(16.dp)).padding(16.dp)) {
-                    KomaText(course.name, size = 19, weight = FontWeight.Bold, lineHeight = 1.3f)
-                    val start = timeGrid.firstOrNull { it.index == course.startPeriod }?.start
-                    val end = timeGrid.firstOrNull { it.index == course.endPeriod }?.end
-                    val period = if (course.startPeriod == course.endPeriod) "第 ${course.startPeriod} 节" else "第 ${course.startPeriod}–${course.endPeriod} 节"
-                    DetailField("节次", period)
-                    DetailField("时间", if (start != null && end != null) "${formatTime(start)}–${formatTime(end)}" else "未设置")
-                    DetailField("地点", course.location?.takeIf { it.isNotBlank() } ?: "未填写")
-                    DetailField("教师", course.teacher?.takeIf { it.isNotBlank() } ?: "未填写")
-                    DetailField("周次", "${weeksToString(course.weeks)} 周")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DetailField(label: String, value: String) {
-    val c = KomaTheme.colors
-    Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        KomaText(label, size = 12, color = c.ink4)
-        KomaText(value, Modifier.weight(1f), size = 12, weight = FontWeight.Medium, color = c.ink2)
-    }
-}

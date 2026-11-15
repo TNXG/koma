@@ -6,6 +6,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import moe.tnxg.koma.domain.model.Course
 import moe.tnxg.koma.domain.model.TimetableSnapshot
+import moe.tnxg.koma.domain.model.courseHeldOnWeek
 
 fun today(): LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 fun nowMinutes(): Int = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).let { it.hour * 60 + it.minute }
@@ -31,7 +32,7 @@ data class CourseTime(val course: Course, val start: Int?, val end: Int?)
 fun coursesOnDate(snapshot: TimetableSnapshot, startDate: String, date: LocalDate): List<CourseTime> {
     val week = weekIndex(startDate, date)
     val weekday = isoWeekday(date)
-    return snapshot.courses.filter { it.weekday == weekday && week in it.weeks }.sortedBy(Course::startPeriod).map { course ->
+    return snapshot.courses.filter { it.weekday == weekday && courseHeldOnWeek(it, week) }.sortedBy(Course::startPeriod).map { course ->
         CourseTime(course, snapshot.timeGrid.find { it.index == course.startPeriod }?.start,
             snapshot.timeGrid.find { it.index == course.endPeriod }?.end)
     }

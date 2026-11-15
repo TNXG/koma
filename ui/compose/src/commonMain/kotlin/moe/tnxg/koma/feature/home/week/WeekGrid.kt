@@ -89,15 +89,15 @@ internal fun WeekGrid(schedule: WeekSchedule, timeGrid: List<TimeSlot>, today: L
             schedule.days.take(if(prefs.showWeekend)7 else 5).forEach { day ->
                 Box(Modifier.weight(1f).height(gridHeight)) {
                     day.groups.forEach { group ->
-                        WeekGridCard(group, day.date, today, slots, minutes, rowHeight, compact,
-                            group.courses.all { schedule.week !in it.weeks },
+                        WeekGridCard(group, day.date, today, slots, minutes, rowHeight, compact, schedule.week,
+                            group.courses.all { !moe.tnxg.koma.domain.model.courseHeldOnWeek(it, schedule.week) },
                             Modifier.offset(y = rowHeight * (group.startPeriod - 1) + 2.dp)
                                 .fillMaxWidth().height(rowHeight * (group.endPeriod - group.startPeriod + 1) - 4.dp)) {
                             onCourse(day.date, group.courses)
                         }
                     }
                     // “现在”只画在正在上课的时段里；课间和放学后不显示，也不随钟点滑过空白。
-                    if (day.date == today && now != null && activeGroupFor(day, slots, minutes) != null) {
+                    if (day.date == today && now != null && activeGroupFor(day, slots, minutes, schedule.week) != null) {
                         Box(Modifier.offset(y = rowHeight * now).fillMaxWidth().height(2.dp)
                             .background(c.accent, RoundedCornerShape(2.dp)))
                     }
@@ -107,25 +107,32 @@ internal fun WeekGrid(schedule: WeekSchedule, timeGrid: List<TimeSlot>, today: L
     }
 }
 
-internal fun activeGroupFor(day: WeekDay, slots: Map<Int, TimeSlot>, minutes: Int): WeekCourseGroup? =
+internal fun activeGroupFor(day: WeekDay, slots: Map<Int, TimeSlot>, minutes: Int, week: Int? = null): WeekCourseGroup? =
     day.groups.firstOrNull { group ->
-        val start = slots[group.startPeriod]?.start ?: return@firstOrNull false
-        val end = slots[group.endPeriod]?.end ?: return@firstOrNull false
-        minutes in start until end
+        group.courses.any { course ->
+            if (week != null && !moe.tnxg.koma.domain.model.courseHeldOnWeek(course, week)) false
+            else {
+                val start = slots[course.startPeriod]?.start
+                val end = slots[course.endPeriod]?.end
+                start != null && end != null && minutes in start until end
+            }
+        }
     }
 
 @Composable
 private fun WeekGridCard(group: WeekCourseGroup, date: LocalDate, today: LocalDate, slots: Map<Int, TimeSlot>,
-    minutes: Int, rowHeight: Dp, compact: Boolean, inactive: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    minutes: Int, rowHeight: Dp, compact: Boolean, week: Int, inactive: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val c = KomaTheme.colors
     val prefs = LocalAppPreferences.current
-    val course = group.courses.first()
+    val activeCourses = group.courses.filter { moe.tnxg.koma.domain.model.courseHeldOnWeek(it, week) }
+    val course = activeCourses.firstOrNull() ?: group.courses.first()
+    val suspended = activeCourses.isEmpty() && group.courses.any { week in it.suspendedWeeks && week in it.weeks }
     val tone = if(prefs.colorCourses)courseTone(courseVisual(course.name).tone) else c.accent
     val end = slots[group.endPeriod]?.end
     val start = slots[group.startPeriod]?.start
     val past = date < today || (date == today && end != null && minutes >= end)
-    val ongoing = date == today && start != null && end != null && minutes in start until end
-    val conflict = group.courses.size > 1
+    val ongoing = !inactive && date == today && start != null && end != null && minutes in start until end
+    val conflict = activeCourses.size > 1
     val shape = RoundedCornerShape(9.dp)
     val foreground = if (past) lerp(tone, c.ink3, .4f) else lerp(tone, c.ink, .2f)
     val fill = lerp(c.surface, tone, if (ongoing) .2f else if (past) .06f else .11f)
@@ -134,9 +141,10 @@ private fun WeekGridCard(group: WeekCourseGroup, date: LocalDate, today: LocalDa
     Column(modifier.graphicsLayer { alpha=if(inactive).4f else 1f }.clip(shape).background(fill)
         .then(if (ongoing || conflict) Modifier.border(1.dp, if (conflict) c.toneAmber.copy(alpha = .65f) else tone, shape) else Modifier)
         .semantics { contentDescription = "${course.name}，${course.location.orEmpty()}，第 ${group.startPeriod} 至 ${group.endPeriod} 节" +
-            if (conflict) "，${group.courses.size} 门重叠课程" else "" }
+            (if (suspended) "，本周已停课" else "") + if (conflict) "，${activeCourses.size} 门重叠课程" else "" }
         .dockPress(scale = .97f, onClick = onClick).padding(horizontal = 4.dp, vertical = 5.dp)) {
-        if (conflict) KomaText("${group.courses.size} 门", size = 8, lineHeight = 1.1f, weight = FontWeight.Bold, color = c.toneAmber)
+        if (suspended) KomaText("已停课", size = 8, lineHeight = 1.1f, weight = FontWeight.Bold, color = c.ink3)
+        if (conflict) KomaText("${activeCourses.size} 门", size = 8, lineHeight = 1.1f, weight = FontWeight.Bold, color = c.toneAmber)
         KomaText(course.name, size = textSize, lineHeight = 1.25f, weight = FontWeight.Bold, color = foreground,
             maxLines = if (group.endPeriod > group.startPeriod) 5 else 2)
         if (prefs.showRoom && location != null && (!compact || rowHeight * (group.endPeriod - group.startPeriod + 1) >= 52.dp)) {

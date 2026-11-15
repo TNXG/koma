@@ -32,6 +32,8 @@ import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.platform.PlatformBackHandler
 import moe.tnxg.koma.ui.theme.KomaTheme
 import moe.tnxg.koma.app.preferences.LocalAppPreferences
+import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 
 @Composable
 internal fun WeekScreen(
@@ -41,6 +43,7 @@ internal fun WeekScreen(
 ) {
     val c = KomaTheme.colors
     val prefs = LocalAppPreferences.current
+    val backdrop = rememberLayerBackdrop { drawRect(c.bg); drawContent() }
     val total = snapshot.semester.totalWeeks.coerceAtLeast(1)
     val initial = weekIndex(startDate, selected).coerceIn(1, total)
     val pager = rememberPagerState(initialPage = initial - 1, pageCount = { total })
@@ -50,12 +53,12 @@ internal fun WeekScreen(
         displayWeekSchedule(snapshot, startDate, week, prefs.showOtherWeekCourses)
     }
     val count = remember(schedule, prefs.showWeekend) { schedule.days.take(if(prefs.showWeekend)7 else 5)
-        .sumOf { day -> day.groups.sumOf { group -> group.courses.count { week in it.weeks } } } }
+        .sumOf { day -> day.groups.sumOf { group -> group.courses.count { moe.tnxg.koma.domain.model.courseHeldOnWeek(it, week) } } } }
     var selector by remember { mutableStateOf(false) }
     var picked by remember { mutableStateOf<List<Course>>(emptyList()) }
+    var pickedDate by remember { mutableStateOf(selected) }
     SideEffect{onOverlayChanged(selector || picked.isNotEmpty())}
     DisposableEffect(Unit){onDispose{onOverlayChanged(false)}}
-    var pickedDate by remember { mutableStateOf(selected) }
     val currentWeek = weekIndex(startDate, today)
     val latestSelect by rememberUpdatedState(onSelect)
     val selectedWeekday = isoWeekday(selected)
@@ -72,7 +75,7 @@ internal fun WeekScreen(
     }
     LaunchedEffect(recenter){if(recenter>0)goTo(currentWeek)}
     Box(Modifier.fillMaxSize().background(c.bg)) {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        Column(Modifier.fillMaxSize().layerBackdrop(backdrop).statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 Row(Modifier.dockPress { selector = !selector }.padding(vertical = 2.dp),
@@ -119,6 +122,6 @@ internal fun WeekScreen(
             }
         }
         WeekSelector(selector, snapshot, startDate, week, today, { selector = false; goTo(it) }, { selector = false })
-        WeekCourseSheet(picked, pickedDate, snapshot.timeGrid) { picked = emptyList() }
+        CourseDrawer(picked, pickedDate, backdrop) { picked = emptyList() }
     }
 }

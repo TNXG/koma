@@ -18,7 +18,7 @@ internal fun nextCourseReminder(snapshot: TimetableSnapshot, startDate: String, 
         val slot = slots[course.startPeriod] ?: continue
         if (slot.start !in 0..1439 || course.weekday !in 1..7) continue
         for (week in course.weeks) {
-            if (week !in 1..snapshot.semester.totalWeeks) continue
+            if (week !in 1..snapshot.semester.totalWeeks || week in course.suspendedWeeks) continue
             val date = addDays(monday, (week - 1) * 7 + course.weekday - 1)
             val starts = LocalDateTime(date, LocalTime(slot.start / 60, slot.start % 60)).toInstant(zone)
             val at = Instant.fromEpochMilliseconds(starts.toEpochMilliseconds() - leadMinutes * 60_000L)

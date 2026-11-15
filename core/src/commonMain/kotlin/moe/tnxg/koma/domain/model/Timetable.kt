@@ -13,6 +13,12 @@ data class Course(
     val endPeriod: Int,
     val weeks: List<Int>,
     val source: Map<String, String> = emptyMap(),
+    val note: String = "",
+    /** Per-week notes; the whole-course [note] stays shared across every week. */
+    val sessionNotes: Map<Int, String> = emptyMap(),
+    val suspendedWeeks: List<Int> = emptyList(),
+    val rescheduledFromCourseId: String? = null,
+    val rescheduledFromWeek: Int? = null,
 )
 
 @Serializable
@@ -38,7 +44,7 @@ data class TimetableSnapshot(
 fun courseIdOf(name: String, teacher: String?, location: String?, weekday: Int, startPeriod: Int, endPeriod: Int): String =
     listOf(name, teacher.orEmpty(), location.orEmpty(), weekday.toString(), startPeriod.toString(), endPeriod.toString()).joinToString("|")
 
-fun courseHeldOnWeek(course: Course, week: Int): Boolean = week in course.weeks
+fun courseHeldOnWeek(course: Course, week: Int): Boolean = week in course.weeks && week !in course.suspendedWeeks
 
 fun coursesForWeek(courses: List<Course>, week: Int): List<Course> = courses.filter { courseHeldOnWeek(it, week) }
     .sortedWith(compareBy(Course::weekday, Course::startPeriod))

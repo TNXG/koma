@@ -36,4 +36,10 @@ class NowLineTest {
         val empty = WeekDay(LocalDate.parse("2026-09-07"), emptyList())
         assertNull(activeGroupFor(empty, slots, 500))
     }
+    @Test fun cancelledCourseRemainsReachableButNeverShowsNowLine() {
+        val course = Course("a", "数学", weekday = 1, startPeriod = 1, endPeriod = 2,
+            weeks = listOf(1), suspendedWeeks = listOf(1))
+        val day = WeekDay(LocalDate.parse("2026-09-07"), listOf(WeekCourseGroup(1, 2, listOf(course))))
+        assertNull(activeGroupFor(day, slots, 500, week = 1))
+    }
 }

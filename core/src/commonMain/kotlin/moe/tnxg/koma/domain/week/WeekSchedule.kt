@@ -6,6 +6,7 @@ import moe.tnxg.koma.domain.calendar.mondayOf
 import moe.tnxg.koma.domain.model.Course
 import moe.tnxg.koma.domain.model.TimeSlot
 import moe.tnxg.koma.domain.model.TimetableSnapshot
+import moe.tnxg.koma.domain.model.courseHeldOnWeek
 
 data class WeekCourseGroup(val startPeriod: Int, val endPeriod: Int, val courses: List<Course>)
 data class WeekDay(val date: LocalDate, val groups: List<WeekCourseGroup>)
@@ -14,7 +15,7 @@ data class WeekSchedule(val week: Int, val days: List<WeekDay>, val periodCount:
 fun buildWeekSchedule(snapshot: TimetableSnapshot, startDate: String, week: Int): WeekSchedule {
     val boundedWeek = week.coerceIn(1, snapshot.semester.totalWeeks.coerceAtLeast(1))
     val monday = addDays(mondayOf(LocalDate.parse(startDate)), (boundedWeek - 1) * 7)
-    val active = snapshot.courses.filter { boundedWeek in it.weeks }.groupBy(Course::weekday)
+    val active = snapshot.courses.filter { courseHeldOnWeek(it, boundedWeek) }.groupBy(Course::weekday)
     val days = (1..7).map { weekday ->
         val sorted = active[weekday].orEmpty().sortedWith(compareBy(Course::startPeriod, Course::endPeriod, Course::id))
         val groups = mutableListOf<WeekCourseGroup>()
