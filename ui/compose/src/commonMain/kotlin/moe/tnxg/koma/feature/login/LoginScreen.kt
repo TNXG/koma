@@ -29,7 +29,7 @@ import moe.tnxg.koma.ui.theme.KomaTheme
 @Composable
 fun LoginScreen(app: AppController) {
     val colors = KomaTheme.colors
-    LaunchedEffect(app) { app.prepare() }
+    LaunchedEffect(app) { if (app.phase == LoginPhase.Idle) app.prepare() }
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
             .padding(start = 20.dp, end = 20.dp, top = 34.dp)) {
