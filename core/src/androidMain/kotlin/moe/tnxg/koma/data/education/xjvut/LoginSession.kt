@@ -25,10 +25,9 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
             return true
         }
         val cas = entry.headers["Location"]?.let(entry.url::resolve)?.takeIf(Endpoints::isLogin) ?: return false
-        // A service redirect is not proof of an authenticated CAS session. Probe
-        // without service first: a login execution means credentials are needed,
-        // not that an SSO ticket cycle should be followed until its hop limit.
-        val probe = http.follow(Endpoints.LOGIN)
+        // Only inspect CAS here: an authenticated no-service login redirects to
+        // the default portal, whose session is unrelated to the education service.
+        val probe = http.call(Endpoints.LOGIN)
         if (extractExecution(probe.text) != null) return false
         // Existing CAS-only sessions must still be able to mint a JW service ticket.
         ready = Endpoints.isIndex(http.follow(cas.toString()).url)
@@ -76,7 +75,7 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
             .add("_eventId", "submit").add("type", "zhmm").build()
         key = null
         val response = try {
-            http.follow(Endpoints.LOGIN, body, mapOf("Referer" to Endpoints.LOGIN))
+            http.call(Endpoints.LOGIN, body, mapOf("Referer" to Endpoints.LOGIN))
         } catch (error: EduHttpException) {
             // A rejected login is still a login failure: keep a usable form and say why.
             ready = false

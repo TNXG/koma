@@ -21,6 +21,24 @@ class LoginSessionTest {
         assertEquals(fixture.execution, fixture.submittedExecution)
     }
 
+    @Test fun authenticatedCasProbeDoesNotFollowTheDefaultPortalService() = runBlocking {
+        val vault = CookieVault(null)
+        val cas = Endpoints.LOGIN.toHttpUrl()
+        vault.saveFromResponse(cas, listOf(Cookie.parse(cas, "CASTGT=live; Path=/cas; Secure; HttpOnly")!!))
+        val fixture = SessionBoundaryFixture(vault).apply { defaultPortalRedirect = true }
+        assertIs<LoginPreparation.Ready>(fixture.service().prepare())
+        assertTrue(fixture.requests.none { it.url.host == "portal.xjvut.edu.cn" })
+    }
+
+    @Test fun successfulLoginExchangesTheEducationTicketWithoutEnteringTheDefaultPortal() = runBlocking {
+        val fixture = SessionBoundaryFixture(CookieVault(null)).apply { defaultPortalRedirect = true }
+        val service = fixture.service()
+        assertIs<LoginPreparation.Form>(service.prepare())
+        assertTrue(service.login("student", "password", "").ok)
+        assertTrue(fixture.requests.none { it.url.host == "portal.xjvut.edu.cn" })
+        assertTrue(fixture.requests.any { it.url.queryParameter("ticket") == "ST-live" })
+    }
+
     @Test fun persistedAnonymousRoutingCookiesDoNotBecomeEvidenceOfAuthentication() = runBlocking {
         withPersistedVault { file, key ->
             val origin = Endpoints.LOGIN.toHttpUrl()
@@ -76,6 +94,8 @@ private class SessionBoundaryFixture(private val vault: CookieVault) {
     var submittedExecution: String? = null
         private set
     var casTarget: String? = null
+    var defaultPortalRedirect = false
+    private val portal = "https://portal.xjvut.edu.cn:6080/personal-center"
     private val cas = Endpoints.LOGIN.toHttpUrl()
     private val sso = Endpoints.SSO.toHttpUrl()
     private val serviceLogin = cas.newBuilder().addQueryParameter("service", Endpoints.SSO).build()
@@ -88,6 +108,10 @@ private class SessionBoundaryFixture(private val vault: CookieVault) {
         fun save(url: HttpUrl, raw: String) = vault.saveFromResponse(url, listOf(Cookie.parse(url, raw)!!))
         var location: String? = null
         val body = when {
+            request.url.host == "portal.xjvut.edu.cn" -> {
+                location = cas.newBuilder().addQueryParameter("service", portal).build().toString()
+                ""
+            }
             request.url.port == 444 -> {
                 location = "https://qyrz.xjvut.edu.cn:444/cas/login"
                 ""
@@ -108,15 +132,18 @@ private class SessionBoundaryFixture(private val vault: CookieVault) {
                 submittedExecution = (0 until form.size).firstOrNull { form.name(it) == "execution" }?.let(form::value)
                 assertEquals(execution, submittedExecution)
                 save(cas, "CASTGT=live; Path=/cas; Secure; HttpOnly")
+                if (defaultPortalRedirect) location = portal
                 "<html>authenticated</html>"
             }
             request.url.encodedPath == "/cas/login" && request.url.queryParameter("service") != null -> {
                 // Without a valid CAS session the service can keep bouncing an unusable ticket.
                 // A restore probe must not enter that chain just to discover a login is needed.
-                location = sso.newBuilder().addQueryParameter("ticket", if (cookie(cas, "CASTGT")) "ST-live" else "ST-rejected").build().toString()
+                location = if (request.url.queryParameter("service") == portal) "$portal?ticket=ST-portal"
+                else sso.newBuilder().addQueryParameter("ticket", if (cookie(cas, "CASTGT")) "ST-live" else "ST-rejected").build().toString()
                 ""
             }
             request.url.encodedPath == "/cas/login" -> if (cookie(cas, "CASTGT")) {
+                if (defaultPortalRedirect) location = portal
                 "<html>authenticated</html>"
             } else {
                 save(cas, "route=anonymous; Path=/")
