@@ -28,6 +28,8 @@ internal class OcrEngine(
         private set
 
     init {
+        /* ORT_DISABLE_TELEMETRY 由 Application 提前设置；这里再用 API 兜底，避免宿主漏设。 */
+        runCatching { env.setTelemetry(false) }
         for (line in charset.lineSequence()) {
             val at = line.indexOf('\t')
             if (at <= 0) continue
