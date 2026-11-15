@@ -41,7 +41,7 @@ private suspend fun downloadWithRedirects(initialUrl: String): ByteArray {
             readTimeout = READ_TIMEOUT_MS
             requestMethod = "GET"
             setRequestProperty("Accept", "image/*")
-            setRequestProperty("User-Agent", "Koma/0.2.0 (Android)")
+            setRequestProperty("User-Agent", "Koma/0.0.1 (Android)")
         }
         val cancelHook = coroutineContext[Job]?.invokeOnCompletion { cause ->
             if (cause != null) {

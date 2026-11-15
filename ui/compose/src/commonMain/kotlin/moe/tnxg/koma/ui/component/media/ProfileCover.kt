@@ -52,17 +52,24 @@ fun ProfileCover(
     val c = KomaTheme.colors
     val services = LocalImageServices.current
     val reduceMotion = LocalAppPreferences.current.reduceMotion
-    var state by remember { mutableStateOf<CoverState>(CoverState.Loading) }
+    var state by remember(photoPath) {
+        mutableStateOf<CoverState>(ProfilePhotoCache.get(photoPath)?.let(CoverState::Ready) ?: CoverState.Loading)
+    }
     var reloadNonce by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(services, photoPath, refreshToken, reloadNonce) {
+        val forceRefresh = refreshToken > 0 || reloadNonce > 0
+        ProfilePhotoCache.get(photoPath)?.takeUnless { forceRefresh }?.let {
+            state = CoverState.Ready(it)
+            return@LaunchedEffect
+        }
         state = CoverState.Loading
         state = try {
             CoverState.Ready(
-                resolveCover(
+                ProfilePhotoCache.cover(
                     services = services,
                     photoPath = photoPath,
-                    forceRefresh = refreshToken > 0 || reloadNonce > 0,
+                    forceRefresh = forceRefresh,
                 ),
             )
         } catch (cancelled: CancellationException) {

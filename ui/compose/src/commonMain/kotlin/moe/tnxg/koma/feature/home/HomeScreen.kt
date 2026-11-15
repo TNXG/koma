@@ -34,6 +34,8 @@ import moe.tnxg.koma.app.preferences.PreferenceStore
 import moe.tnxg.koma.app.preferences.HomeDestination
 import moe.tnxg.koma.platform.NotificationService
 import moe.tnxg.koma.ui.platform.PlatformBackHandler
+import moe.tnxg.koma.ui.component.media.LocalImageServices
+import moe.tnxg.koma.ui.component.media.ProfilePhotoCache
 import moe.tnxg.koma.feature.home.timeline.*
 import moe.tnxg.koma.ui.theme.KomaTheme
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -51,6 +53,11 @@ fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,store:PreferenceStore
     val density=LocalDensity.current
     val backdrop=rememberLayerBackdrop { drawRect(c.bg);drawContent() }
     val layer=backdrop.graphicsLayer
+    val images=LocalImageServices.current
+    LaunchedEffect(images,store.coverPhoto,store.avatarPhoto){
+        images?.let { ProfilePhotoCache.preload(it,store.coverPhoto,store.avatarPhoto) }
+    }
+    DisposableEffect(Unit){onDispose{ProfilePhotoCache.clear()}}
     val scope=rememberCoroutineScope()
     var todayDate by remember { mutableStateOf(today()) }
     var minutes by remember { mutableStateOf(nowMinutes()) }
@@ -117,8 +124,8 @@ fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,store:PreferenceStore
         }
     }
     Box(Modifier.fillMaxSize().background(c.bg)) {
-        Box(Modifier.fillMaxSize().layerBackdrop(dockBackdrop)) {
-        HorizontalPager(pages,Modifier.fillMaxSize().zIndex(if(!profile && weekly && weekOverlay)1f else 0f),
+        Box(Modifier.fillMaxSize().zIndex(if(!profile && weekly && weekOverlay)1f else 0f).layerBackdrop(dockBackdrop)) {
+        HorizontalPager(pages,Modifier.fillMaxSize(),
             userScrollEnabled=false,beyondViewportPageCount=2){page->
             if(page==0)Box(Modifier.fillMaxSize()){
                 HomeTimeline(blocks,scroll,minutes,selected==todayDate,backdrop)

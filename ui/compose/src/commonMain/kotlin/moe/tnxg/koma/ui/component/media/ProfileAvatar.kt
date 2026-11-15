@@ -14,7 +14,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
@@ -35,11 +34,12 @@ fun ProfileAvatar(seed: String, photoPath: String, modifier: Modifier = Modifier
 internal fun LocalPhoto(path: String, modifier: Modifier = Modifier) {
     val services = LocalImageServices.current
     val c = KomaTheme.colors
-    var bitmap by remember(path) { mutableStateOf<ImageBitmap?>(null) }
+    var bitmap by remember(path) { mutableStateOf(ProfilePhotoCache.get(path)) }
 
     LaunchedEffect(services, path) {
+        if (bitmap != null) return@LaunchedEffect
         bitmap = try {
-            services?.readPhotoBytes(path)?.let { decodePhotoBytes(it) }
+            ProfilePhotoCache.photo(services, path)
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {

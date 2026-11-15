@@ -48,6 +48,7 @@ import moe.tnxg.koma.ui.component.list.SettingsSection
 import moe.tnxg.koma.ui.component.media.LocalImageServices
 import moe.tnxg.koma.ui.component.media.ProfileAvatar
 import moe.tnxg.koma.ui.component.media.ProfileCover
+import moe.tnxg.koma.ui.component.media.ProfilePhotoCache
 import moe.tnxg.koma.ui.component.page.SubpageScaffold
 import moe.tnxg.koma.ui.component.sheet.OptionSheet
 import moe.tnxg.koma.ui.component.sheet.SheetOption
@@ -76,6 +77,7 @@ fun ProfileScreen(store: PreferenceStore, onBack: () -> Unit) {
             try {
                 val path = imageServices.pickPhoto(target)
                 if (path != null) {
+                    ProfilePhotoCache.invalidate(path)
                     when (target) {
                         PhotoTarget.Avatar -> store.saveAvatarPhoto(path)
                         PhotoTarget.Cover -> store.saveCoverPhoto(path)
@@ -91,12 +93,14 @@ fun ProfileScreen(store: PreferenceStore, onBack: () -> Unit) {
     }
 
     fun restoreGeneratedAvatar() {
+        ProfilePhotoCache.invalidate(store.avatarPhoto)
         services?.deletePhoto(PhotoTarget.Avatar)
         store.saveAvatarPhoto(null)
         store.rerollAvatarSeed()
     }
 
     fun restoreRandomCover() {
+        ProfilePhotoCache.invalidate(store.coverPhoto)
         services?.deletePhoto(PhotoTarget.Cover)
         store.saveCoverPhoto(null)
         coverToken++
