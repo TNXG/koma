@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.number
 import moe.tnxg.koma.domain.calendar.*
 import moe.tnxg.koma.domain.model.Course
 import moe.tnxg.koma.domain.model.TimeSlot
@@ -50,7 +51,7 @@ internal fun WeekDayHeader(days: List<WeekDay>, selected: LocalDate, today: Loca
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 KomaText("周${weekdayLabel(day.date)}", size = 10, lineHeight = 1.2f, weight = FontWeight.SemiBold,
                     color = if (active || isToday) c.accent else c.ink2)
-                KomaText("${day.date.monthNumber}/${day.date.dayOfMonth}", Modifier.padding(top = 2.dp),
+                KomaText("${day.date.month.number}/${day.date.day}", Modifier.padding(top = 2.dp),
                     size = 8.5f, lineHeight = 1.2f, weight = FontWeight.Medium,
                     color = if (active || isToday) c.accent else c.ink4)
                 if (isToday) Box(Modifier.padding(top = 2.dp).width(18.dp).height(2.dp).background(c.accent.copy(alpha = .35f)))

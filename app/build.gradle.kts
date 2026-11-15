@@ -74,9 +74,9 @@ kotlin { jvmToolchain(21) }
 dependencies {
     implementation(project(":core"))
     implementation(project(":ui:compose"))
-    implementation("androidx.activity:activity-compose:1.10.1")
-    implementation("androidx.core:core-ktx:1.16.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("androidx.activity:activity-compose:1.13.0")
+    implementation("androidx.core:core-ktx:1.19.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
 }
 
 tasks.register("verifyOcrModel") {

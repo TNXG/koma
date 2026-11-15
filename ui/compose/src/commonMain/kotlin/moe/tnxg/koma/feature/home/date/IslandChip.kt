@@ -43,7 +43,7 @@ internal fun IslandChip(day: LocalDate, count: Int?, selected: Boolean, today: L
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            KomaText(day.dayOfMonth.toString(), size = 16, lineHeight = 1.1f, weight = FontWeight.Bold, color = number)
+            KomaText(day.day.toString(), size = 16, lineHeight = 1.1f, weight = FontWeight.Bold, color = number)
             KomaText(if (day == today) "今" else weekdayLabel(day), Modifier.padding(top = 1.dp),
                 size = 9, lineHeight = 1f, weight = FontWeight.Bold, color = weekday)
         }

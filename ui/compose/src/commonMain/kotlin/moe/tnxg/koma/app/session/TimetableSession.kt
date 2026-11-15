@@ -48,12 +48,12 @@ class TimetableSession(private val platform: PlatformServices) {
     fun accept(next: TimetableSnapshot) {
         val previous = snapshot
         val sameSchool = previous?.schoolId == next.schoolId
-        val sameTerm = sameSchool && previous?.term == next.term
+        val sameTerm = sameSchool && previous.term == next.term
         val target = state?.takeIf { it.snapshot.schoolId == next.schoolId && it.snapshot.term == next.term }
             ?: savedStates.firstOrNull { it.snapshot.schoolId == next.schoolId && it.snapshot.term == next.term }
         val grid = next.timeGrid.ifEmpty {
             target?.snapshot?.timeGrid.orEmpty().ifEmpty {
-                if (sameSchool) previous?.timeGrid.orEmpty().ifEmpty { DEFAULT_TIME_GRID } else DEFAULT_TIME_GRID
+                if (sameSchool) previous.timeGrid.orEmpty().ifEmpty { DEFAULT_TIME_GRID } else DEFAULT_TIME_GRID
             }
         }
         save(synchronizeCourses(target, next.copy(timeGrid = grid)))

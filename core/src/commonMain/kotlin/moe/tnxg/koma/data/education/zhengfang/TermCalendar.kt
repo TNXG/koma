@@ -1,6 +1,7 @@
 package moe.tnxg.koma.data.education.zhengfang
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.number
 import kotlinx.serialization.json.*
 import moe.tnxg.koma.domain.calendar.*
 import moe.tnxg.koma.domain.model.Term
@@ -38,8 +39,8 @@ fun termLabel(term: Term): String {
     return "${term.xnm}–$next 学年 第 $index 学期"
 }
 fun guessTerm(now: LocalDate = today()): Term = when {
-    now.monthNumber >= 9 -> Term(now.year.toString(), "3")
-    now.monthNumber >= 2 -> Term(now.year.toString(), "12")
+    now.month.number >= 9 -> Term(now.year.toString(), "3")
+    now.month.number >= 2 -> Term(now.year.toString(), "12")
     else -> Term((now.year - 1).toString(), "3")
 }
 

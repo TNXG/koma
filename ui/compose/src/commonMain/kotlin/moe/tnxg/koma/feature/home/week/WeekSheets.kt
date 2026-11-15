@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.number
 import kotlinx.datetime.plus
 import moe.tnxg.koma.domain.calendar.*
 import moe.tnxg.koma.domain.model.*
@@ -37,7 +38,7 @@ internal fun WeekSelector(open: Boolean, snapshot: TimetableSnapshot, startDate:
     val months = remember(first, total) {
         val end = addDays(first, total * 7 - 1)
         val out = mutableListOf<LocalDate>()
-        var month = LocalDate(first.year, first.monthNumber, 1)
+        var month = LocalDate(first.year, first.month.number, 1)
         while (month <= end) {
             out += month
             month = month.plus(DatePeriod(months = 1))
@@ -60,7 +61,7 @@ internal fun WeekSelector(open: Boolean, snapshot: TimetableSnapshot, startDate:
         map
     }
     val list = rememberLazyListState()
-    fun monthIndex(date: LocalDate) = months.indexOfFirst { it.year == date.year && it.monthNumber == date.monthNumber }
+    fun monthIndex(date: LocalDate) = months.indexOfFirst { it.year == date.year && it.month.number == date.month.number }
     LaunchedEffect(open) {
         if (open) list.scrollToItem(monthIndex(addDays(mondayOf(first), (selectedWeek - 1) * 7)).coerceAtLeast(0))
     }
@@ -74,7 +75,7 @@ internal fun WeekSelector(open: Boolean, snapshot: TimetableSnapshot, startDate:
             }
         }
         LazyColumn(Modifier.fillMaxWidth().height(470.dp), state = list) {
-            items(months, key = { "${it.year}-${it.monthNumber}" }) { month ->
+            items(months, key = { "${it.year}-${it.month.number}" }) { month ->
                 MonthBlock(month, first, total, snapshot.semester.name, selectedWeek, today, counts, onPick)
             }
         }
@@ -90,14 +91,14 @@ private fun MonthBlock(month: LocalDate, startDate: LocalDate, totalWeeks: Int, 
     val lead = isoWeekday(month) - 1
     val cells = buildList<LocalDate?> {
         repeat(lead) { add(null) }
-        for (day in 1..length) add(LocalDate(month.year, month.monthNumber, day))
+        for (day in 1..length) add(LocalDate(month.year, month.month.number, day))
         while (size % 7 != 0) add(null)
     }
     val firstWeek = weekIndex(startDate.toString(), month).coerceAtLeast(1)
     val lastWeek = weekIndex(startDate.toString(), addDays(month, length - 1)).coerceAtMost(totalWeeks)
     Column(Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
         Row(Modifier.padding(top = 10.dp, bottom = 6.dp), verticalAlignment = Alignment.Bottom) {
-            KomaText("${month.monthNumber}月", size = 19, weight = FontWeight.ExtraBold, letterSpacing = -.4f)
+            KomaText("${month.month.number}月", size = 19, weight = FontWeight.ExtraBold, letterSpacing = -.4f)
             KomaText("$semester 第 $firstWeek–$lastWeek 周", Modifier.padding(start = 6.dp, bottom = 2.dp),
                 size = 11.5f, weight = FontWeight.SemiBold, color = c.ink4, maxLines = 1)
         }
@@ -121,7 +122,7 @@ private fun MonthBlock(month: LocalDate, startDate: LocalDate, totalWeeks: Int, 
                             .dockPress { onPick(weekIndex(startDate.toString(), date).coerceIn(1, totalWeeks)) },
                             horizontalAlignment = Alignment.CenterHorizontally) {
                             Box(Modifier.fillMaxWidth().weight(1f)) {
-                                KomaText(date.dayOfMonth.toString(), Modifier.align(Alignment.Center),
+                                KomaText(date.day.toString(), Modifier.align(Alignment.Center),
                                     size = 15, lineHeight = 1f, weight = FontWeight.Bold,
                                     color = if (isToday || on) c.accent else if (n > 0) c.ink else c.ink5)
                                 if (n > 0) {

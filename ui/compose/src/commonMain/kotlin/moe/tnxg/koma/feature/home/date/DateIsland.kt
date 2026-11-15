@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.number
 import moe.tnxg.koma.domain.calendar.daysBetween
 import moe.tnxg.koma.domain.calendar.weekdayLabel
 import moe.tnxg.koma.feature.home.dock.dockPress
@@ -160,13 +161,13 @@ private fun IslandHandle(date: LocalDate, today: LocalDate, expanded: Boolean,
 ) {
     val c = KomaTheme.colors
     val hint = if (expanded) "收起日期" else "展开日期"
-    val label = "${date.monthNumber}月${date.dayOfMonth}日${if (date == today) "今天" else ""}，$hint"
+    val label = "${date.month.number}月${date.day}日${if (date == today) "今天" else ""}，$hint"
     Box(Modifier.width(ISLAND_HANDLE_WIDTH).fillMaxHeight()
         .semantics { contentDescription = label; role = Role.Button }
         .dockPress(.97f, onToggle)) {
         Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            KomaText(date.dayOfMonth.toString(), size = 14, lineHeight = 1.15f,
+            KomaText(date.day.toString(), size = 14, lineHeight = 1.15f,
                 weight = FontWeight.ExtraBold, letterSpacing = -.28f)
             KomaText(if (date == today) "今" else weekdayLabel(date), size = 9, lineHeight = 1f,
                 weight = FontWeight.Bold, color = c.ink4)

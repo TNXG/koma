@@ -3,7 +3,7 @@ package moe.tnxg.koma.app.preferences
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import moe.tnxg.koma.domain.model.*
 

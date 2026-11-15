@@ -1,9 +1,10 @@
 package moe.tnxg.koma.domain.calendar
 
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.number
 import moe.tnxg.koma.domain.model.Course
 import moe.tnxg.koma.domain.model.TimetableSnapshot
 import moe.tnxg.koma.domain.model.courseHeldOnWeek
@@ -11,10 +12,10 @@ import moe.tnxg.koma.domain.model.courseHeldOnWeek
 fun today(): LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 fun nowMinutes(): Int = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).let { it.hour * 60 + it.minute }
 fun addDays(date: LocalDate, days: Int): LocalDate = LocalDate.fromEpochDays(date.toEpochDays() + days)
-fun daysBetween(a: LocalDate, b: LocalDate): Int = b.toEpochDays() - a.toEpochDays()
+fun daysBetween(a: LocalDate, b: LocalDate): Int = (b.toEpochDays() - a.toEpochDays()).toInt()
 fun isoWeekday(date: LocalDate): Int = date.dayOfWeek.ordinal + 1
 fun mondayOf(date: LocalDate): LocalDate = addDays(date, 1 - isoWeekday(date))
-fun formatMonthDay(date: LocalDate): String = "${date.monthNumber}月${date.dayOfMonth}日"
+fun formatMonthDay(date: LocalDate): String = "${date.month.number}月${date.day}日"
 fun weekdayLabel(date: LocalDate): String = "一二三四五六日"[isoWeekday(date) - 1].toString()
 fun weekIndex(startDate: String, date: LocalDate): Int {
     val days = daysBetween(LocalDate.parse(startDate), date)

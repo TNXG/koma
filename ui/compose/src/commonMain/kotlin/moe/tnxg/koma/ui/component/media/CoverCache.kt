@@ -4,7 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.ImageBitmap
 import moe.tnxg.koma.platform.CachedPhoto
 import moe.tnxg.koma.platform.ImageServices
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 internal const val COVER_URL = "https://api-space.tnxg.top/images/wallpaper_height?mode=redirect&source=cdcn"
 

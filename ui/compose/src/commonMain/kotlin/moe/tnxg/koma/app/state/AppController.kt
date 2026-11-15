@@ -13,7 +13,7 @@ import moe.tnxg.koma.data.education.LoginPreparation
 import moe.tnxg.koma.domain.captcha.captchaAnswer
 import moe.tnxg.koma.platform.PlatformServices
 import moe.tnxg.koma.platform.SavedCredentials
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import androidx.compose.runtime.staticCompositionLocalOf
 
 val LocalAppController = staticCompositionLocalOf<AppController> { error("AppController not provided") }

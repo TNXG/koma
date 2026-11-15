@@ -44,7 +44,7 @@ internal class EduHttp(private val client: OkHttpClient) {
                 }
                 override fun onResponse(call: Call, response: Response) {
                     try {
-                        val result = response.use { HttpResult(it.code, it.request.url, it.headers, it.body?.bytes() ?: byteArrayOf()) }
+                        val result = response.use { HttpResult(it.code, it.request.url, it.headers, it.body.bytes()) }
                         if (continuation.isActive) {
                             if (result.status >= 400) continuation.resumeWithException(
                                 EduHttpException(result.status, result.url, result.text))

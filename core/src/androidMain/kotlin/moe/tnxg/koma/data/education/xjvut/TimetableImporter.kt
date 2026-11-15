@@ -7,7 +7,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.serialization.json.*
 import moe.tnxg.koma.data.education.cas.termFromIndex
 import moe.tnxg.koma.data.education.http.EduHttp

@@ -8,7 +8,7 @@ import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.Json
 import moe.tnxg.koma.domain.model.TimetableSnapshot

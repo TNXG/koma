@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.number
 import kotlinx.datetime.plus
 import moe.tnxg.koma.domain.calendar.addDays
 import moe.tnxg.koma.domain.calendar.mondayOf
@@ -48,7 +49,7 @@ internal fun calendarMonthAt(page: Int): LocalDate =
 
 internal fun calendarPageOf(month: LocalDate): Int {
     val page = (month.year - CALENDAR_MONTH_BASE.year) * 12 +
-        month.monthNumber - CALENDAR_MONTH_BASE.monthNumber
+        month.month.number - CALENDAR_MONTH_BASE.month.number
     return page.coerceIn(0, CALENDAR_MONTH_PAGES - 1)
 }
 
@@ -75,7 +76,7 @@ fun DateSheet(
             MonthArrow(false) {
                 scope.launch { pager.animateScrollToPage((pager.currentPage - 1).coerceAtLeast(0)) }
             }
-            KomaText("${month.year}年${month.monthNumber}月", size = 15, weight = FontWeight.Bold, letterSpacing = -.15f)
+            KomaText("${month.year}年${month.month.number}月", size = 15, weight = FontWeight.Bold, letterSpacing = -.15f)
             MonthArrow(true) {
                 scope.launch { pager.animateScrollToPage((pager.currentPage + 1).coerceAtMost(CALENDAR_MONTH_PAGES - 1)) }
             }
@@ -116,9 +117,9 @@ private fun MonthGrid(month: LocalDate, value: LocalDate, onPick: (LocalDate) ->
                     if (selected) style = style.border(1.5.dp, colors.accent2, shape)
                     Box(style.clickable(remember { MutableInteractionSource() }, null) { onPick(day) },
                         contentAlignment = Alignment.Center) {
-                        KomaText(day.dayOfMonth.toString(), size = 15,
-                            weight = if (day.monthNumber == month.monthNumber) FontWeight.SemiBold else FontWeight.Medium,
-                            color = when { selected -> colors.accent; day.monthNumber != month.monthNumber -> colors.ink5; else -> colors.ink })
+                        KomaText(day.day.toString(), size = 15,
+                            weight = if (day.month.number == month.month.number) FontWeight.SemiBold else FontWeight.Medium,
+                            color = when { selected -> colors.accent; day.month.number != month.month.number -> colors.ink5; else -> colors.ink })
                         if (day == today) Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp)
                             .size(4.dp).background(colors.accent, CircleShape))
                     }
