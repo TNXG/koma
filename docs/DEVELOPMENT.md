@@ -68,7 +68,7 @@ mise run run
 - `mise run run` 需要已连接的 Android 设备或模拟器。
 - 单独检查：`mise run check`。
 - 设备测试：`mise exec -- gradle :core:connectedAndroidDeviceTest`。
-- 验证码 OCR 使用 ONNX Runtime Android 1.32.0；该版本默认开启微软 1DS 遥测，应用在 `KomaApplication.onCreate` 里先设置 `ORT_DISABLE_TELEMETRY=1`，`OcrEngine` 再用 `setTelemetry(false)` 兜底。升级后可单独运行模型设备测试：`mise exec -- gradle :core:connectedAndroidDeviceTest -Pandroid.testInstrumentationRunnerArguments.class=moe.tnxg.koma.ocr.OcrModelInstrumentedTest`，覆盖原图与裁切视图的实际推理。
+- 验证码 OCR 使用 ONNX Runtime Android 1.32.0；该版本默认开启微软 1DS 遥测，应用在 `KomaApplication.onCreate` 里先设置 `ORT_DISABLE_TELEMETRY=1`，`OcrEngine` 再用 `setTelemetry(false)` 兜底，并在 manifest 合并时移除 `ai.onnxruntime.TelemetryInitializer` 与它带入的 `ACCESS_NETWORK_STATE`。升级后可单独运行模型设备测试：`mise exec -- gradle :core:connectedAndroidDeviceTest -Pandroid.testInstrumentationRunnerArguments.class=moe.tnxg.koma.ocr.OcrModelInstrumentedTest`，覆盖原图与裁切视图的实际推理。
 
 ## 发布与 CI
 
