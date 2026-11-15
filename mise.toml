@@ -20,7 +20,7 @@ description = "Build the native Android application"
 run = "gradle :app:assembleDebug"
 
 [tasks.build-release]
-description = "Build the release APK, signed with the debug key for adb install"
+description = "Build the release APK, signed with ~/android.p12"
 run = "gradle :app:assembleRelease"
 
 [tasks.install-release]

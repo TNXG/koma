@@ -45,7 +45,7 @@ import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.theme.KomaTheme
 import org.jetbrains.compose.resources.painterResource
 
-const val APP_VERSION = "0.2.0"
+const val APP_VERSION = "0.0.1"
 const val PROJECT_URL = "https://github.com/tnxg/koma"
 private const val PROJECT_HOST = "github.com/tnxg/koma"
 private const val ISSUES_URL = "$PROJECT_URL/issues"

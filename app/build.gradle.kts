@@ -5,6 +5,11 @@ plugins {
     kotlin("plugin.compose")
 }
 
+// 发布签名口令来源：环境变量优先，其次未跟踪的 gradle.properties。
+val releaseSecret: (String) -> String? = { name ->
+    System.getenv(name) ?: project.providers.gradleProperty(name).orNull
+}
+
 android {
     namespace = "moe.tnxg.koma"
     compileSdk = 37
@@ -13,17 +18,28 @@ android {
         minSdk = 29
         targetSdk = 37
         versionCode = 2
-        versionName = "0.2.0"
+        versionName = "0.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    signingConfigs {
+        create("release") {
+            // 口令只从环境变量或未跟踪的 gradle.properties 读取，绝不写入版本库。
+            storeFile = file(
+                System.getenv("KOMA_KEYSTORE") ?: providers.gradleProperty("koma.keystore").orNull
+                    ?: "${System.getProperty("user.home")}/android.p12",
+            )
+            storePassword = releaseSecret("KOMA_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KOMA_KEY_ALIAS") ?: providers.gradleProperty("koma.keyAlias").orNull ?: "app_sign"
+            keyPassword = releaseSecret("KOMA_KEY_PASSWORD")
+        }
+    }
     buildTypes {
         release {
-            // 本地构建与 adb 安装沿用调试签名；正式分发时替换为发布密钥。
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     buildFeatures { compose = true }
@@ -52,3 +68,17 @@ tasks.register("verifyOcrModel") {
     }
 }
 tasks.named("preBuild") { dependsOn("verifyOcrModel") }
+
+// 口令不进版本库，所以发布包必须在构建时显式具备，缺失即失败而不是产出无签名包。
+val verifyReleaseSigning = tasks.register("verifyReleaseSigning") {
+    doLast {
+        val missing = listOf("KOMA_KEYSTORE_PASSWORD", "KOMA_KEY_PASSWORD")
+            .filter { releaseSecret(it).isNullOrBlank() }
+        check(missing.isEmpty()) {
+            "缺少发布签名口令：${missing.joinToString()}；请设置环境变量，或在 ~/.gradle/gradle.properties 中配置。"
+        }
+    }
+}
+listOf("assembleRelease", "bundleRelease").forEach { name ->
+    tasks.matching { it.name == name }.configureEach { dependsOn(verifyReleaseSigning) }
+}
