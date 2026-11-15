@@ -64,6 +64,15 @@ mise run run
 - 单独检查：`mise run check`。
 - 设备测试：`mise exec -- gradle :core:connectedAndroidDeviceTest`。
 
+## 发布与 CI
+
+- **分包**：`app/build.gradle.kts` 开启 ABI splits，`assembleRelease` 一次产出 `koma-<versionName>-arm64-v8a.apk`、`-armeabi-v7a`、`-x86`、`-x86_64` 与 `-universal`。onnxruntime 的原生库按 split 过滤，`assets/ocr/captcha.onnx` 随每个包一起打入；`tools/verify-apks.py` 校验每个包只含自己的 ABI 且带模型。
+- **版本号**：`komaVersionName` 是唯一来源，同时用于 `versionName` 与 APK 文件名。ABI split 与 universal 的 `versionCode` 相同，切换包形态时用 `adb install -r`。
+- **签名**：`KOMA_KEYSTORE`、`KOMA_KEYSTORE_PASSWORD`、`KOMA_KEY_PASSWORD` 由环境变量或 `~/.gradle/gradle.properties` 提供，别名默认 `app_sign`；缺失时 `verifyReleaseSigning` 直接失败。
+- **CI**：`.github/workflows/release.yml` 在推送 `v*` 标签或手动触发时运行，固定 JDK 21、Gradle 9.5.1、API 37，先按 SHA-256 拉取 OCR 模型，再从 Secrets 解出 keystore 构建、验签、上传 artifact；tag 构建额外发布 GitHub Release。
+- **Secrets**：仓库需要 `KOMA_KEYSTORE_BASE64`（keystore 的 base64）、`KOMA_KEYSTORE_PASSWORD`、`KOMA_KEY_PASSWORD`。上传示例：`base64 -w0 ~/android.p12 | gh secret set KOMA_KEYSTORE_BASE64`，另两个用 `gh secret set <名字>` 交互输入。
+- **本地出发布包**：`export KOMA_KEYSTORE_PASSWORD=... KOMA_KEY_PASSWORD=...` 后执行 `mise run install-release`（安装 universal 包）。
+
 ## 迁移约束
 
 - **视觉基线**：UI 用 Foundation 自绘，沿用 Capacitor 的亮暗配色、Inter 字体、字号、曲线和时长，不套用 Material、Miuix 等库的默认视觉。Inter 从原 WOFF2 生成相同字重的 TTF，避免换字体改变字宽。

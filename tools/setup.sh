@@ -17,11 +17,5 @@ set +o pipefail
 yes 2>/dev/null | .tools/android/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null
 set -o pipefail
 .tools/android/cmdline-tools/latest/bin/sdkmanager 'platform-tools' 'platforms;android-37.0' 'build-tools;37.0.0'
-model=core/src/androidMain/assets/ocr/captcha.onnx
-hash=b8f2ad9cbc1f2e3922a6cb9459e30824e7e2467f3fb4fd61420640e34ea0bf68
-if [[ ! -f "$model" ]] || ! printf '%s  %s\n' "$hash" "$model" | sha256sum --check --status; then
-    curl --fail --location --retry 2 https://raw.githubusercontent.com/sml2h3/ddddocr/master/ddddocr/common_old.onnx -o "$model.tmp"
-    printf '%s  %s\n' "$hash" "$model.tmp" | sha256sum --check
-    mv "$model.tmp" "$model"
-fi
+tools/fetch-ocr-model.sh
 printf 'Android SDK and verified OCR model ready.\n'

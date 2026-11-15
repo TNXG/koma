@@ -5,6 +5,9 @@ plugins {
     kotlin("plugin.compose")
 }
 
+// 版本号同时用于 APK 文件名，保持单一来源。
+val komaVersionName = "0.0.1"
+
 // 发布签名口令来源：环境变量优先，其次未跟踪的 gradle.properties。
 val releaseSecret: (String) -> String? = { name ->
     System.getenv(name) ?: project.providers.gradleProperty(name).orNull
@@ -18,12 +21,21 @@ android {
         minSdk = 29
         targetSdk = 37
         versionCode = 2
-        versionName = "0.0.1"
+        versionName = komaVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+    // onnxruntime 的原生库按 ABI 切成独立 APK，另出一个含全部 ABI 的 universal 包。
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+            isUniversalApk = true
+        }
     }
     signingConfigs {
         create("release") {
@@ -44,6 +56,17 @@ android {
     }
     buildFeatures { compose = true }
     packaging { jniLibs.useLegacyPackaging = true }
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            val abi = output.filters.firstOrNull {
+                it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI
+            }?.identifier ?: "universal"
+            output.outputFileName.set("koma-$komaVersionName-$abi.apk")
+        }
+    }
 }
 
 kotlin { jvmToolchain(21) }

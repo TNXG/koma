@@ -12,3 +12,4 @@ capacitor/dist/
 capacitor/android/.gradle/
 capacitor/android/local.properties
 .ryugi/
+android.p12
