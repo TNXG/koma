@@ -105,4 +105,4 @@ Windows、macOS、Linux 用同一套命令。`mise run setup` 按平台分派：
 
 ## 开源协议
 
-采用 AGPL-3.0 协议，版权归 TNXG 所有。
+采用 AGPL-3.0 协议，版权归 GengXing Developer Lab & TNXG 所有。
