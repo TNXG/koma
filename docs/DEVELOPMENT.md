@@ -2,6 +2,8 @@
 
 面向修改本项目的人。用户文档见 [README](../README.md)。
 
+源码同时托管在 [GitHub](https://github.com/TNXG/koma) 与 [GitCode](https://gitcode.com/gxdev_lab/koma)，两边内容一致；Issue、PR 与 CI 在 GitHub 上进行。
+
 Kotlin Multiplatform + Compose Multiplatform，当前只构建 Android Application。
 
 ## 工程结构

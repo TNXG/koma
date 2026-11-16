@@ -101,7 +101,7 @@ Windows、macOS、Linux 用同一套命令。`mise run setup` 按平台分派：
 
 ## 反馈与源码
 
-遇到问题请到 [GitHub Issues](https://github.com/TNXG/koma/issues) 反馈，源码仓库在 [https://github.com/TNXG/koma](https://github.com/TNXG/koma)。改代码请看 [开发说明](docs/DEVELOPMENT.md)。
+遇到问题请到 [GitHub Issues](https://github.com/TNXG/koma/issues) 反馈。源码同时托管在 [GitHub](https://github.com/TNXG/koma) 与 [GitCode](https://gitcode.com/gxdev_lab/koma)，两边内容一致。改代码请看 [开发说明](docs/DEVELOPMENT.md)。
 
 ## 开源协议
 
