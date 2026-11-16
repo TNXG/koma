@@ -70,7 +70,7 @@ fun AboutScreen(
     SubpageScaffold(title = "关于", onBack = onBack) {
         AboutHeroCard()
 
-        SettingsSection("支持")
+        SettingsSection("支持与反馈")
         SettingsGroup {
             SettingsNavRow(
                 title = "开源许可",
@@ -82,7 +82,7 @@ fun AboutScreen(
             SettingsNavRow(title = "隐私与权限", glyph = KomaGlyph.Eye, onClick = onPrivacy)
             SettingsDivider()
             SettingsNavRow(
-                title = "反馈问题",
+                title = "问题反馈",
                 glyph = KomaGlyph.Message,
                 onClick = { open(ISSUES_URL) },
             )
@@ -99,7 +99,7 @@ fun AboutScreen(
             SettingsDivider()
             DeveloperRow(
                 name = "TNXG",
-                role = "开发者 · GitHub.com",
+                role = "维护者 · GitHub",
                 initial = "T",
                 avatarUrl = MAINTAINER_AVATAR,
                 tint = c.accent,
@@ -108,7 +108,7 @@ fun AboutScreen(
         }
 
         KomaText(
-            text = "Koma 以 $AGREEMENT 发布。课程数据与账号凭据只保存在本机。",
+            text = "Koma 遵循 $AGREEMENT 开源协议发布。所有课表数据与教务凭据均加密储存在本机。",
             modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 18.dp),
             size = 11.5f,
             weight = FontWeight.Medium,

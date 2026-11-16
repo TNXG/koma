@@ -51,17 +51,17 @@ fun SemesterScreen(semester: Semester, confirmedDate: String, onConfirm: (String
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
             .padding(start = 20.dp, end = 20.dp, top = 34.dp)) {
-            KomaText("设置开学时间", size = 26, weight = FontWeight.ExtraBold, letterSpacing = -.52f, lineHeight = 1.2f)
+            KomaText("校历与开学时间", size = 26, weight = FontWeight.ExtraBold, letterSpacing = -.52f, lineHeight = 1.2f)
             Spacer(Modifier.height(6.dp))
-            KomaText("第 1 周的周一，决定每天显示哪些课", size = 12.5f, weight = FontWeight.Medium, color = colors.ink4)
+            KomaText("设置第 1 周周一日期，用于准确推算学期周次及每日课程", size = 12.5f, weight = FontWeight.Medium, color = colors.ink4)
             Spacer(Modifier.height(22.dp))
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(colors.surface)) {
-                SemesterRow("开学", Modifier.clickable(remember { MutableInteractionSource() }, null) { calendar = true },
+                SemesterRow("开学首周", Modifier.clickable(remember { MutableInteractionSource() }, null) { calendar = true },
                     trailing = {
                         KomaIcon(KomaGlyph.Right, null, Modifier.size(14.dp), color = colors.ink5)
                     }) {
                     KomaText(selected.toString().replace('-', '/'), size = 14, weight = FontWeight.SemiBold)
-                    KomaText("第 1 周 · ${formatMonthDay(selected)} 周一${if (selected == detected) " · 来自教务" else ""}",
+                    KomaText("第 1 周 · ${formatMonthDay(selected)} 周一${if (selected == detected) "（教务默认）" else ""}",
                         Modifier.padding(top = 2.dp), 11.5f, FontWeight.Medium, colors.ink4)
                 }
                 Divider()
@@ -77,10 +77,10 @@ fun SemesterScreen(semester: Semester, confirmedDate: String, onConfirm: (String
                 }
                 SemesterRow("今天") { KomaText(todayText, size = 14, weight = FontWeight.SemiBold) }
             }
-            if (selected != detected) KomaTextButton("恢复教务日期（${formatMonthDay(detected)}）",
+            if (selected != detected) KomaTextButton("恢复教务默认日期（${formatMonthDay(detected)}）",
                 { selected = mondayOf(detected) }, Modifier.padding(start = 2.dp, top = 16.dp), colors.ink3)
         }
-        KomaButton("开始使用", { onConfirm(selected.toString()) },
+        KomaButton("进入课表", { onConfirm(selected.toString()) },
             Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 22.dp))
     }
     DateSheet(calendar, selected, { selected = mondayOf(it) }, { calendar = false })

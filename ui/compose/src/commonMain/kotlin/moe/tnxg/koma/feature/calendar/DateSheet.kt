@@ -93,7 +93,7 @@ fun DateSheet(
             MonthGrid(calendarMonthAt(page), value) { onPick(it); onDismiss() }
         }
         Box(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {
-            KomaText(hint.ifEmpty { "点任意一天，自动取那一周的周一" }, size = 12,
+            KomaText(hint.ifEmpty { "点击任意日期定位到对应周次" }, size = 12,
                 weight = FontWeight.Medium, color = colors.ink4)
         }
     }

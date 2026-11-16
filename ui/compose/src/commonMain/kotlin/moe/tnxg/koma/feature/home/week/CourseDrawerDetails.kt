@@ -68,15 +68,15 @@ internal fun CourseDrawerDetails(course: Course, courses: List<Course>, date: Lo
         val wholeNote = course.note
         DetailTile(DetailIcon.Note, sessionNote.ifBlank { wholeNote }.ifBlank { "添加课程备注" },
             when {
-                sessionNote.isNotBlank() && wholeNote.isNotBlank() -> "课程简介与本节课备注"
-                sessionNote.isNotBlank() -> "仅本节课备注"
-                wholeNote.isNotBlank() -> "仅课程简介"
-                else -> "记录这门课需要记住的事"
+                sessionNote.isNotBlank() && wholeNote.isNotBlank() -> "课程简介与单周备注"
+                sessionNote.isNotBlank() -> "本节课备注"
+                wholeNote.isNotBlank() -> "课程简介"
+                else -> "记录备忘、作业或考核要求"
             }, onClick = onNote)
     }
     Spacer(Modifier.height(12.dp))
     DetailTile(DetailIcon.Info,
-        if (suspended) "第 $week 周已停课，不会安排课程提醒。" else "手动调整优先保留；教务同步有冲突时由你处理。",
+        if (suspended) "第 $week 周已设为停课，不再提醒上课。" else "手动调课优先保留；同步发生变动时支持冲突对照。",
         notice = true)
     if (others.isNotEmpty()) {
         Spacer(Modifier.height(12.dp))

@@ -152,7 +152,7 @@ fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,store:PreferenceStore
             {profile=false;jumpJob?.cancel();if(weekly)weekRecenter++ else{weekRecenter=0;weekly=true}},
             {profile=true;profilePage=MePage.Main},
             Modifier.align(Alignment.BottomCenter),page=dockBackdrop)
-        DateSheet(calendar,selected,{jump(it);calendar=false},{calendar=false},"选一天，跳到那天的课程")
+        DateSheet(calendar,selected,{jump(it);calendar=false},{calendar=false},"选择日期跳转到对应课程")
     }
 }
 

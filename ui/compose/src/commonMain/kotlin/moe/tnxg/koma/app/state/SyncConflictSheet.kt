@@ -27,8 +27,8 @@ internal fun SyncConflictSheet(app: AppController) {
         { app.showSyncConflicts = false }) {
         Column(Modifier.fillMaxWidth().heightIn(max = 560.dp).verticalScroll(rememberScrollState())
             .padding(top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            KomaText("课表同步有冲突", size = 22, weight = FontWeight.Bold)
-            KomaText("${conflicts.size} 项待处理 · 手动调整已优先保留，没有被同步覆盖。", size = 12, color = c.ink3)
+            KomaText("课表同步冲突", size = 22, weight = FontWeight.Bold)
+            KomaText("${conflicts.size} 项冲突待解决 · 本地手动调整已优先保留，未被覆盖。", size = 12, color = c.ink3)
             if (conflict != null) {
                 if (conflict.kind == CourseSyncConflictKind.Overlap) {
                     app.timetable.snapshot?.courses?.filter { it.id in conflict.relatedCourseIds }?.forEach {
@@ -37,9 +37,9 @@ internal fun SyncConflictSheet(app: AppController) {
                 } else ConflictCourse("本机课程", conflict.localCourse)
                 ConflictCourse("教务课程", conflict.remoteCourse)
                 KomaText(when (conflict.kind) {
-                    CourseSyncConflictKind.RemoteDeleted -> "教务已不再提供这门课程。使用教务结果将移除本地课程及关联调课。"
-                    CourseSyncConflictKind.Overlap -> "教务课程与手动调整后的课程时间重叠。使用教务结果将停课本机冲突的周次，保留备注和其他周次。"
-                    else -> "教务排课发生变化，与本机手动修改不一致。请明确选择保留哪一份。"
+                    CourseSyncConflictKind.RemoteDeleted -> "教务端已不再提供这门课程。采用教务结果将移除本地课程及调课记录。"
+                    CourseSyncConflictKind.Overlap -> "教务课程与本地手动调整后的课程时间重叠。采用教务结果将对本地冲突周次做停课处理，保留备注及其他周次。"
+                    else -> "教务排课已变更，与本地修改冲突。请选择保留哪一份版本。"
                 }, size = 13, color = c.ink2)
                 fun resolve(useRemote: Boolean) {
                     try { app.timetable.resolveConflict(conflict.id, useRemote); error = null }

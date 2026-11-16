@@ -281,7 +281,7 @@ private fun SemesterSummaryCard(
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            KomaText("学期进度", size = 10, color = c.ink3)
+            KomaText("本学期进度", size = 10, color = c.ink3)
             KomaText("$formattedStart 开学", size = 10, color = c.ink3)
         }
     }

@@ -36,11 +36,11 @@ internal fun CourseSlot(row: CourseRow, first: Boolean, last: Boolean, minutes: 
     val start = row.start
     val end = row.end
     val hint=when {
-        row.state==RowState.Now && end!=null->"现在 ${formatTime(minutes)}，还剩 ${formatDuration(end-minutes)}"
+        row.state==RowState.Now && end!=null->"进行中 · 还剩 ${formatDuration(end-minutes)}"
         row.state==RowState.Next && start!=null->{
             val gap=start-minutes
-            if(viewIsToday && gap in 1..60) "还有 ${formatDuration(gap)}，${formatTime(start)} 开始"
-            else "下一站，${formatTime(start)} 开出"
+            if(viewIsToday && gap in 1..60) "还有 ${formatDuration(gap)} · ${formatTime(start)} 上课"
+            else "下一节 · ${formatTime(start)}"
         }
         else->null
     }

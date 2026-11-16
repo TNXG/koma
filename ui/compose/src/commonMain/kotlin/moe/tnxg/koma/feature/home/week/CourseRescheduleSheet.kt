@@ -69,8 +69,8 @@ internal fun CourseRescheduleSheet(open: Boolean, course: Course, sourceWeek: In
     KomaSheet(open, onDismiss, glassBackdrop = backdrop) {
         Column(Modifier.fillMaxWidth().imePadding()) {
             Column(Modifier.fillMaxWidth().heightIn(max = maxHeight - 96.dp).verticalScroll(rememberScrollState())) {
-                DrawerSheetHeader(KomaGlyph.Calendar, "调整这次课程",
-                    "只移动第 $sourceWeek 周这一次，其他周次不变")
+                DrawerSheetHeader(KomaGlyph.Calendar, "调整单次课程",
+                    "仅移动第 $sourceWeek 周的这一次安排，不影响其他周次")
                 Spacer(Modifier.height(12.dp))
                 KomaText(currentLine, size = 11, color = KomaTheme.colors.ink3)
                 Spacer(Modifier.height(12.dp))

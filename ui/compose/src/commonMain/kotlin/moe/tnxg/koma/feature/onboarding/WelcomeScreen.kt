@@ -33,9 +33,9 @@ import moe.tnxg.koma.ui.theme.KomaTheme
 import org.jetbrains.compose.resources.painterResource
 
 private val features = listOf(
-    KomaGlyph.Calendar to "今天上什么课，一眼看清",
-    KomaGlyph.Location to "几点上下课，下一节去哪",
-    KomaGlyph.Refresh to "导入一次，离线也能看",
+    KomaGlyph.Calendar to "今日日程，清晰直观",
+    KomaGlyph.Location to "教室节次，一目了然",
+    KomaGlyph.Refresh to "本地存储，离线随时查阅",
 )
 
 @Composable
@@ -50,10 +50,10 @@ fun WelcomeScreen(onStart: () -> Unit) {
                     Modifier.size(84.dp).shadow(14.dp, iconShape, ambientColor = colors.accent,
                         spotColor = colors.accent).clip(iconShape).border(1.dp, colors.line2, iconShape))
                 Spacer(Modifier.height(40.dp))
-                KomaText("欢迎使用 Koma Pro", size = 30, weight = FontWeight.ExtraBold,
+                KomaText("欢迎使用 Koma", size = 30, weight = FontWeight.ExtraBold,
                     letterSpacing = -.6f, lineHeight = 1.25f)
                 Spacer(Modifier.height(10.dp))
-                KomaText("登录学校教务导入课表，之后的每一天交给它。", size = 14, color = colors.ink2)
+                KomaText("绑定教务系统导入课表，轻松掌握学期日程。", size = 14, color = colors.ink2)
                 Spacer(Modifier.height(36.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                     features.forEach { (glyph, text) ->
@@ -67,9 +67,9 @@ fun WelcomeScreen(onStart: () -> Unit) {
             }
             KomaText("列车终将开往下一站，那舞台呢？我们呢？",
                 Modifier.align(Alignment.CenterHorizontally).padding(horizontal = 28.dp),
-                size = 12, color = colors.ink4)
-            KomaButton("开始", onStart,
-                Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 22.dp))
+                size = 12, color = colors.ink4, letterSpacing = -.2f)
+            KomaButton("开始使用", onStart,
+                Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp))
         }
     }
 }

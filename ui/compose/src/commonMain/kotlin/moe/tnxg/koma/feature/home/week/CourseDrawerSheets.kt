@@ -100,13 +100,13 @@ internal fun CourseNoteSheet(open: Boolean, course: Course, week: Int, backdrop:
         Column(Modifier.fillMaxWidth().imePadding()) {
             Column(Modifier.fillMaxWidth().heightIn(max = maxHeight - 96.dp).verticalScroll(rememberScrollState())) {
                 DrawerSheetHeader(KomaGlyph.Book, "课程备注",
-                    "第 $week 周 · 周${listOf("一", "二", "三", "四", "五", "六", "日")[course.weekday - 1]} · $courseNameHint")
+                    "第 $week 周 · 周${listOf("一", "二", "三", "四", "五", "六", "日")[course.weekday - 1]}")
                 Spacer(Modifier.height(16.dp))
-                NoteField("课程简介", "同名课程共享，长期保留",
-                    "例如：期末占比 40%，教材第 2 版", whole) { whole = it.take(200) }
+                NoteField("课程简介", "所有周次共享展示",
+                    "例如：考核方式、指定教材或任课要求", whole) { whole = it.take(200) }
                 Spacer(Modifier.height(18.dp))
-                NoteField("本节课备注", "只对第 $week 周生效，其他周次不受影响",
-                    "例如：交作业、带计算器、复习第 3 章", session) { session = it.take(200) }
+                NoteField("本周备注", "仅对第 $week 周有效",
+                    "例如：随堂测试、交大作业、带实验器材", session) { session = it.take(200) }
                 if (error != null) KomaText(error, Modifier.padding(top = 10.dp), size = 12, color = KomaTheme.colors.danger)
             }
             Spacer(Modifier.height(12.dp))
@@ -117,8 +117,6 @@ internal fun CourseNoteSheet(open: Boolean, course: Course, week: Int, backdrop:
         }
     }
 }
-
-private const val courseNameHint = "课程简介全周共享，本节课备注只影响这一周"
 
 @Composable
 private fun NoteField(label: String, hint: String, placeholder: String, text: String, onChange: (String) -> Unit) {
@@ -151,14 +149,14 @@ internal fun SuspendSheetContent(courseName: String, week: Int, suspendedThisWee
         "第 $week 周 · $courseName · 停课不会删除课程")
     Spacer(Modifier.height(14.dp))
     if (!suspendedThisWeek) {
-        DrawerOptionRow(KomaGlyph.Calendar, "仅停第 $week 周", "只取消这一周的课，其他周次不变", onClick = onWeek)
+        DrawerOptionRow(KomaGlyph.Calendar, "仅本周停课", "只取消第 $week 周的课程安排", onClick = onWeek)
         Spacer(Modifier.height(8.dp))
-        DrawerOptionRow(KomaGlyph.Book, "全部周次停课", "这门课的所有周次都不再安排", onClick = onAll)
+        DrawerOptionRow(KomaGlyph.Book, "全学期停课", "标记本学期所有周次均不再上课", onClick = onAll)
     } else {
-        DrawerOptionRow(KomaGlyph.Calendar, "恢复第 $week 周", "重新启用这一周的课", onClick = onWeek)
+        DrawerOptionRow(KomaGlyph.Calendar, "恢复本周课程", "重新恢复第 $week 周的课程显示", onClick = onWeek)
         if (hasAnySuspended) {
             Spacer(Modifier.height(8.dp))
-            DrawerOptionRow(KomaGlyph.Book, "恢复全部周次", "把所有停课周次一起恢复", onClick = onAll)
+            DrawerOptionRow(KomaGlyph.Book, "恢复全部周次", "一次性恢复所有已停课的周次", onClick = onAll)
         }
     }
     if (error != null) KomaText(error, Modifier.padding(top = 10.dp), size = 12, color = c.danger)

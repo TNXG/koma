@@ -47,11 +47,11 @@ internal fun DaySection(block: DayBlock, minutes: Int, viewIsToday: Boolean,
             Spacer(Modifier.weight(1f))
             if(block.courses.isNotEmpty()) {
                 val first=block.courses.first().start
-                KomaText("${block.courses.size} 站"+(first?.let{"，${formatTime(it)} 发车"}?:""),
+                KomaText("${block.courses.size} 节课"+(first?.let{" · ${formatTime(it)} 开始"}?:""),
                     Modifier.graphicsLayer{alpha=1-(p*2.4f).coerceIn(0f,1f);translationY=-8.dp.toPx()*e},size=12,weight=FontWeight.SemiBold,color=c.ink5,maxLines=1)
             }
         }
-        if(block.stops.isEmpty()) KomaText("今天没有课，线路休整中",Modifier.padding(top=2.dp,bottom=6.dp),size=13.5f,weight=FontWeight.SemiBold,color=c.ink4)
+        if(block.stops.isEmpty()) KomaText("今天没有课程安排",Modifier.padding(top=2.dp,bottom=6.dp),size=13.5f,weight=FontWeight.SemiBold,color=c.ink4)
         block.stops.forEachIndexed { i, stop -> when(stop) {
             is CourseRow->CourseSlot(stop,i==0,i==block.stops.lastIndex,minutes,viewIsToday)
             is GapStop->GapStopRow(stop,i==0,i==block.stops.lastIndex)
