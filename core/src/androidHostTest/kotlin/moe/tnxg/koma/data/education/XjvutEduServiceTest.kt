@@ -34,11 +34,14 @@ class XjvutEduServiceTest {
         assertIs<LoginPreparation.Form>(service.prepare())
     }
     @Test fun captchaFailureCanRefreshAndRetryWithoutStartingLoginAgain() = runBlocking<Unit> {
-        val service = EducationFixture().service()
-        val prepared = assertIs<LoginPreparation.Form>(service.prepare())
-        assertEquals(LoginResult(false, "验证码不对", true), service.login("student", "pw123", "wrong"))
-        assertEquals(prepared.captcha, service.refreshCaptcha())
-        assertTrue(service.login("student", "pw123", "24").ok)
+        for (status in listOf(200, 401)) {
+            val fixture = EducationFixture().apply { captchaFailureStatus = status }
+            val service = fixture.service()
+            val prepared = assertIs<LoginPreparation.Form>(service.prepare())
+            assertEquals(LoginResult(false, "验证码不对", true), service.login("student", "pw123", "wrong"))
+            assertEquals(prepared.captcha, service.refreshCaptcha())
+            assertTrue(service.login("student", "pw123", "24").ok)
+        }
     }
 
     @Test fun reimportRestoresEncryptedPersistedSessionWithoutCredentials() = runBlocking<Unit> {
@@ -108,6 +111,7 @@ private class EducationFixture(private val vault: CookieVault = CookieVault(null
     var prepareStatus: Int? = null
     var loginStatus: Int? = null
     var loginStatusBody = ""
+    var captchaFailureStatus = 200
     private val weekArrivals = java.util.concurrent.CountDownLatch(2)
     private var execution = "e1"
     private val cas = "https://qyrz.xjvut.edu.cn/cas/login".toHttpUrl()
@@ -138,8 +142,9 @@ private class EducationFixture(private val vault: CookieVault = CookieVault(null
                         assertEquals("submit", field("_eventId"))
                         encryptedPassword = field("password")
                         if (field("authcode") != "24") {
+                            status = captchaFailureStatus
                             execution = "e2"
-                            "<input name='execution' value='e2'><span class='errors'>FailedAuthcodeException</span>"
+                            "<input name='execution' value='e2'><p class='top-error-text'>authenticationFailure.FailedAuthcodeException </p>"
                         }
                         else {
                             // Application interceptors stand outside OkHttp's bridge; seed the real vault at the remote boundary.

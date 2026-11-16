@@ -77,12 +77,15 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
         val response = try {
             http.call(Endpoints.LOGIN, body, mapOf("Referer" to Endpoints.LOGIN))
         } catch (error: EduHttpException) {
-            // A rejected login is still a login failure: keep a usable form and say why.
+            // CAS also renders form failures with HTTP 401; retain its execution and captcha classification.
             ready = false
-            key = try { loadPublicKey(http.follow(Endpoints.LOGIN).text) }
+            key = try {
+                val page = error.body.takeIf { extractExecution(it) != null } ?: http.call(Endpoints.LOGIN).text
+                loadPublicKey(page)
+            }
             catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { null }
-            return LoginResult(false, explain(error))
+            return LoginResult(false, explain(error), isCaptchaError(error.body))
         }
         if (extractExecution(response.text) != null) {
             val raw = casErrorText(response.text)

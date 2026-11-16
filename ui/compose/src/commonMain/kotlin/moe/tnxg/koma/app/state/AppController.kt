@@ -187,7 +187,7 @@ class AppController(
                 if (code == null) {
                     rounds++
                     captcha = platform.edu.refreshCaptcha()
-                    if (rounds >= 3) { manual("自动识别已尝试 3 次，请手动输入验证码"); return }
+                    if (rounds >= 3) { manual(); return }
                     continue
                 }
             }
@@ -196,7 +196,8 @@ class AppController(
             if (!result.captcha) { message = result.message; phase = LoginPhase.Form; return }
             rounds++
             captcha = platform.edu.refreshCaptcha()
-            if (manualCaptcha || rounds >= 3) { manual("验证码不对，请手动输入"); return }
+            if (manualCaptcha) { manual("验证码不对，请重新输入"); return }
+            if (rounds >= 3) { manual(); return }
             code = null
         }
         captchaInput = ""
@@ -217,7 +218,7 @@ class AppController(
         return null
     }
 
-    private fun manual(text: String) {
+    private fun manual(text: String = "自动登录失败，请手动输入验证码") {
         manualCaptcha = true
         captchaInput = ""
         message = text

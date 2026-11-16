@@ -1,5 +1,6 @@
 package moe.tnxg.koma.app.state
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlin.test.*
 import moe.tnxg.koma.app.preferences.PreferenceStore
@@ -8,6 +9,7 @@ import moe.tnxg.koma.data.education.*
 import moe.tnxg.koma.domain.model.*
 import moe.tnxg.koma.platform.*
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class AccountSyncTest {
     @Test fun unrecognizedImagesAreRefreshedBeforeManualFallback() = runTest {
         val platform = SyncPlatform()
@@ -17,6 +19,7 @@ class AccountSyncTest {
         assertEquals(3, platform.imagesSeen.distinct().size)
         assertTrue(app.manualCaptcha)
         assertEquals(LoginPhase.Form, app.phase)
+        assertEquals("自动登录失败，请手动输入验证码", app.message)
         assertEquals(0, platform.logins)
     }
 
@@ -28,6 +31,38 @@ class AccountSyncTest {
         assertEquals(Route.Semester, app.route)
         assertFalse(app.manualCaptcha)
         assertEquals(1, platform.logins)
+    }
+
+    @Test fun rejectedAutomaticCaptchasKeepRetryingWithFreshImagesWithoutShowingFailure() = runTest {
+        val platform = SyncPlatform(rejectedCaptchas = 2)
+        val app = AppController(platform, PreferenceStore(platform::readSetting, platform::writeSetting), this)
+        app.openSchools(); app.selectSchool(); app.prepare(); testScheduler.runCurrent()
+        app.username = "student"; app.password = "secret"; app.submit(); testScheduler.runCurrent()
+        for (image in listOf("image-1", "image-2", "image-3")) {
+            assertEquals(image, app.captcha)
+            assertEquals(LoginPhase.LoggingIn, app.phase)
+            assertEquals("", app.message)
+            assertFalse(app.manualCaptcha)
+            testScheduler.advanceTimeBy(100); testScheduler.runCurrent()
+        }
+        assertEquals(listOf("image-1", "image-2", "image-3"), platform.imagesSeen)
+        assertEquals(Route.Semester, app.route)
+    }
+
+    @Test fun exhaustedAutomaticCaptchasOfferManualInputAndAllowSuccessfulSubmission() = runTest {
+        val platform = SyncPlatform(rejectedCaptchas = 3)
+        val app = AppController(platform, PreferenceStore(platform::readSetting, platform::writeSetting), this)
+        app.openSchools(); app.selectSchool(); app.prepare(); testScheduler.runCurrent()
+        app.username = "student"; app.password = "secret"; app.submit(); testScheduler.runCurrent()
+        testScheduler.advanceTimeBy(300); testScheduler.runCurrent()
+        assertEquals(listOf("image-1", "image-2", "image-3"), platform.imagesSeen)
+        assertEquals("image-4", app.captcha)
+        assertTrue(app.manualCaptcha)
+        assertEquals(LoginPhase.Form, app.phase)
+        assertEquals("自动登录失败，请手动输入验证码", app.message)
+        app.captchaInput = "2"; app.submit(); testScheduler.runCurrent()
+        testScheduler.advanceTimeBy(100); testScheduler.runCurrent()
+        assertEquals(Route.Semester, app.route)
     }
 
     @Test fun automaticRefreshKeepsDateAndHomeAndThrottlesRepeatedForeground() = runTest {
@@ -67,7 +102,11 @@ class AccountSyncTest {
     }
 }
 
-private class SyncPlatform(val readableImage: String? = null, val ready: Boolean = false) : PlatformServices {
+private class SyncPlatform(
+    val readableImage: String? = null,
+    val ready: Boolean = false,
+    val rejectedCaptchas: Int = 0,
+) : PlatformServices {
     val settings = mutableMapOf<String, String>()
     val imagesSeen = mutableListOf<String>()
     var image = 1
@@ -80,7 +119,9 @@ private class SyncPlatform(val readableImage: String? = null, val ready: Boolean
         override suspend fun prepare(): LoginPreparation { prepares++; return if (ready) LoginPreparation.Ready else LoginPreparation.Form("image-1") }
         override suspend fun refreshCaptcha() = "image-${++image}"
         override suspend fun login(username: String, password: String, captcha: String): LoginResult {
-            logins++; assertEquals("2", captcha); return LoginResult(true)
+            logins++; assertEquals("2", captcha)
+            if (rejectedCaptchas > 0) delay(100)
+            return if (logins <= rejectedCaptchas) LoginResult(false, "验证码不对", true) else LoginResult(true)
         }
         override suspend fun importTimetable(): TimetableSnapshot { imports++; return snapshot }
         override suspend fun logout() {}
@@ -93,6 +134,6 @@ private class SyncPlatform(val readableImage: String? = null, val ready: Boolean
     override suspend fun saveCredentials(value: SavedCredentials?) {}
     override suspend fun recognizeCaptcha(dataUrl: String, view: Int): String? {
         imagesSeen += dataUrl
-        return if (dataUrl == readableImage) "1+1" else null
+        return if (dataUrl == readableImage || rejectedCaptchas > 0) "1+1" else null
     }
 }
