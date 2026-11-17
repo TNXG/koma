@@ -6,7 +6,7 @@ plugins {
 }
 
 // 版本号同时用于 APK 文件名，保持单一来源。
-val komaVersionName = "0.0.1"
+val komaVersionName = "0.0.2"
 
 // 发布签名口令来源：环境变量优先，其次未跟踪的 gradle.properties。
 val releaseSecret: (String) -> String? = { name ->
@@ -20,7 +20,7 @@ android {
         applicationId = "moe.tnxg.koma"
         minSdk = 29
         targetSdk = 37
-        versionCode = 2
+        versionCode = 3
         versionName = komaVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
