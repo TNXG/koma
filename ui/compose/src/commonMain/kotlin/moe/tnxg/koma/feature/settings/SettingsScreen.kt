@@ -18,7 +18,7 @@ enum class SettingsPage {
 fun SettingsScreen(
     page: SettingsPage,
     store: PreferenceStore,
-    snapshot: TimetableSnapshot,
+    snapshot: TimetableSnapshot?,
     startDate: String,
     notifications: NotificationService?,
     onPage: (SettingsPage) -> Unit,

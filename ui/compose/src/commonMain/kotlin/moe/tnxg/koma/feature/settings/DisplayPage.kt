@@ -49,7 +49,7 @@ import moe.tnxg.koma.ui.theme.KomaTheme
 @Composable
 internal fun DisplayPage(
     store: PreferenceStore,
-    snapshot: TimetableSnapshot,
+    snapshot: TimetableSnapshot?,
     startDate: String,
     onBack: () -> Unit,
 ) {
@@ -58,13 +58,13 @@ internal fun DisplayPage(
     var densityPicker by remember { mutableStateOf(false) }
     val todayDate = remember { today() }
     val preview = remember(snapshot, startDate, todayDate, prefs.showWeekend, prefs.showOtherWeekCourses) {
-        buildDisplayWeekPreview(
+        snapshot?.let { buildDisplayWeekPreview(
             snapshot = snapshot,
             startDate = startDate,
             todayDate = todayDate,
             showWeekend = prefs.showWeekend,
             showOtherWeekCourses = prefs.showOtherWeekCourses,
-        )
+        ) }
     }
 
     SubpageScaffold(
@@ -81,7 +81,8 @@ internal fun DisplayPage(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            WeekDisplayPreview(preview = preview, todayDate = todayDate, prefs = prefs)
+            if (preview != null) WeekDisplayPreview(preview = preview, todayDate = todayDate, prefs = prefs)
+            else KomaText("导入课表后可预览显示效果", size = 12.5f, color = c.ink4)
         }
 
         SettingsSection("显示内容")

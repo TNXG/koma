@@ -47,12 +47,12 @@ import moe.tnxg.koma.ui.theme.KomaTheme
 @Composable
 internal fun CardsPage(
     store: PreferenceStore,
-    snapshot: TimetableSnapshot,
+    snapshot: TimetableSnapshot?,
     onBack: () -> Unit,
 ) {
     val c = KomaTheme.colors
     val prefs = store.value
-    val sampleCourse = remember(snapshot) { pickCardPreviewCourse(snapshot) }
+    val sampleCourse = remember(snapshot) { snapshot?.let(::pickCardPreviewCourse) }
 
     SubpageScaffold(
         title = "课程卡片",
@@ -74,7 +74,8 @@ internal fun CardsPage(
                     .background(c.bg)
                     .padding(12.dp),
             ) {
-                CardPreviewItem(snapshot = snapshot, course = sampleCourse, prefs = prefs)
+                if (snapshot != null) CardPreviewItem(snapshot = snapshot, course = sampleCourse, prefs = prefs)
+                else KomaText("导入课表后可预览课程卡片", size = 12.5f, color = c.ink4)
             }
         }
 

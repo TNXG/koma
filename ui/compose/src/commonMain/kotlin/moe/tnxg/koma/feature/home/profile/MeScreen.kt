@@ -62,7 +62,7 @@ import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 
 @Composable
 fun MeScreen(
-    snapshot: TimetableSnapshot,
+    snapshot: TimetableSnapshot?,
     startDate: String,
     store: PreferenceStore,
     onProfile: () -> Unit,
@@ -74,11 +74,11 @@ fun MeScreen(
     val c = KomaTheme.colors
     val identityShadow = remember { Shadow(Color.Black.copy(alpha = 0.55f), Offset(0f, 1f), 8f) }
     val displayName = store.profileName.ifBlank {
-        snapshot.studentName?.takeIf(String::isNotBlank) ?: "同学"
+        snapshot?.studentName?.takeIf(String::isNotBlank) ?: "同学"
     }
-    val week = weekIndex(startDate, today())
-    val totalWeeks = snapshot.semester.totalWeeks.coerceAtLeast(1)
-    val count = remember(snapshot) { snapshot.courses.map { it.name }.distinct().size }
+    val week = if (snapshot == null) 0 else weekIndex(startDate, today())
+    val totalWeeks = snapshot?.semester?.totalWeeks?.coerceAtLeast(1) ?: 1
+    val count = remember(snapshot) { snapshot?.courses?.map { it.name }?.distinct()?.size ?: 0 }
     val formattedStart = remember(startDate) {
         runCatching { formatMonthDay(LocalDate.parse(startDate)) }.getOrDefault(startDate)
     }
@@ -167,7 +167,12 @@ fun MeScreen(
                         Column(Modifier.weight(1f)) {
                             KomaText(displayName, size = 21, weight = FontWeight.ExtraBold, color = Color.White,
                                 letterSpacing = -0.6f, maxLines = 1, shadow = identityShadow)
-                            KomaText("新疆理工职业大学", Modifier.padding(top = 4.dp), size = 11,
+                            KomaText(when (snapshot?.schoolId) {
+                                null -> "暂未登录 · 尚未导入课表"
+                                "local-json" -> "本地课表"
+                                "xjvut" -> "新疆理工职业大学"
+                                else -> snapshot.schoolId
+                            }, Modifier.padding(top = 4.dp), size = 11,
                                 color = Color.White.copy(alpha = 0.8f), shadow = identityShadow)
                         }
                     }
@@ -178,7 +183,7 @@ fun MeScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp),
                 ) {
-                    SemesterSummaryCard(
+                    if (snapshot != null) SemesterSummaryCard(
                         modifier = Modifier
                             .semantics { role = Role.Button }
                             .clickable(
@@ -192,6 +197,9 @@ fun MeScreen(
                         courseCount = count,
                         formattedStart = formattedStart,
                     )
+                    else SettingsGroup {
+                        SettingsNavRow("尚未导入课表", value = "登录或导入 JSON", onClick = onSemester)
+                    }
 
                     SettingsGroup(modifier = Modifier.padding(top = 16.dp)) {
                         SettingsNavRow(title = "个人资料", glyph = KomaGlyph.Person, onClick = onProfile)

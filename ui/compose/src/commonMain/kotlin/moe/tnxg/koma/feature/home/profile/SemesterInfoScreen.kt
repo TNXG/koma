@@ -28,6 +28,7 @@ import moe.tnxg.koma.ui.theme.KomaTheme
 
 private fun schoolNameOf(schoolId: String): String = when (schoolId) {
     "xjvut" -> "新疆理工职业大学"
+    "local-json" -> "本地课表"
     else -> schoolId
 }
 

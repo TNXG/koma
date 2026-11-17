@@ -19,12 +19,13 @@ import moe.tnxg.koma.ui.component.list.SettingsSwitchRow
 
 private fun schoolNameOf(schoolId: String): String = when (schoolId) {
     "xjvut" -> "新疆理工职业大学"
+    "local-json" -> "本地课表"
     else -> schoolId
 }
 
 @Composable
 fun AccountScreen(
-    snapshot: TimetableSnapshot,
+    snapshot: TimetableSnapshot?,
     onBack: () -> Unit,
     onReimport: () -> Unit,
     onLogout: () -> Unit,
@@ -37,14 +38,19 @@ fun AccountScreen(
         SettingsGroup {
             SettingsNavRow(
                 title = "学校",
-                value = schoolNameOf(snapshot.schoolId),
+                value = snapshot?.schoolId?.let(::schoolNameOf) ?: "尚未选择学校",
                 chevron = false,
             )
             SettingsDivider()
             SettingsNavRow(
                 title = "登录状态",
-                value = if (app.syncNeedsLogin) "需重新验证" else "课表已同步",
-                tag = snapshot.semester.name,
+                value = when {
+                    snapshot == null -> "暂未登录"
+                    !app.hasSchoolAccount -> "离线课表 · 未登录"
+                    app.syncNeedsLogin -> "需重新验证"
+                    else -> "课表已同步"
+                },
+                tag = snapshot?.semester?.name,
                 chevron = false,
             )
             SettingsDivider()
@@ -55,11 +61,20 @@ fun AccountScreen(
             )
             SettingsDivider()
             SettingsNavRow(
-                title = "登录凭据",
-                value = "系统安全存储",
-                chevron = false,
+                title = "导入课表",
+                value = "文件、粘贴或 AI 识图",
+                onClick = app::openJsonImport,
             )
+            if (app.hasSchoolAccount) {
+                SettingsDivider()
+                SettingsNavRow(
+                    title = "登录凭据",
+                    value = "系统安全存储",
+                    chevron = false,
+                )
+            }
         }
+        if (app.hasSchoolAccount && snapshot != null) {
         SettingsSection("课表更新")
         SettingsGroup {
             SettingsSwitchRow("自动更新", app.autoUpdate, onToggle = app::updateAutoUpdate)
@@ -80,11 +95,11 @@ fun AccountScreen(
                     tint = c.danger, onClick = { app.showSyncConflicts = true })
             }
         }
-
+        }
         SettingsSection("退出")
         SettingsGroup {
             SettingsNavRow(
-                title = "退出登录并清除课表",
+                title = if (app.hasSchoolAccount) "退出登录并清除课表" else "清除本地课表并返回欢迎页",
                 tint = c.danger,
                 iconTint = c.danger,
                 glyph = KomaGlyph.Exit,
@@ -97,7 +112,7 @@ fun AccountScreen(
         open = confirmLogout,
         icon = KomaGlyph.Exit,
         title = "退出登录并清除本地课表？",
-        message = "退出后将清除本机缓存的课表，需重新登录教务系统导入。",
+        message = "清除后可以重新登录教务系统，或通过 JSON 导入课表。",
         details = listOf(
             "清除：本地课表缓存与调课记录",
             "不变：教务系统端的所有数据",

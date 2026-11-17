@@ -36,7 +36,7 @@ internal fun MePage.parent(): MePage = when (this) {
 internal fun ProfileDestinationHost(
     page: MePage,
     store: PreferenceStore,
-    snapshot: TimetableSnapshot,
+    snapshot: TimetableSnapshot?,
     startDate: String,
     notifications: NotificationService?,
     onPage: (MePage) -> Unit,
@@ -61,13 +61,13 @@ internal fun ProfileDestinationHost(
                     startDate = startDate,
                     store = store,
                     onProfile = { onPage(MePage.Profile) },
-                    onSemester = { onPage(MePage.Semester) },
+                    onSemester = { if (snapshot == null) onReimport() else onPage(MePage.Semester) },
                     onAccount = { onPage(MePage.Account) },
                     onSettings = { onPage(MePage.Settings) },
                     onAbout = { onPage(MePage.About) },
                 )
                 MePage.Profile -> ProfileScreen(store, back)
-                MePage.Semester -> SemesterInfoScreen(snapshot, startDate, back, onEditStart)
+                MePage.Semester -> if (snapshot != null) SemesterInfoScreen(snapshot, startDate, back, onEditStart)
                 MePage.Account -> AccountScreen(snapshot, back, onReimport, onLogout)
                 MePage.About -> AboutScreen(
                     onBack = back,

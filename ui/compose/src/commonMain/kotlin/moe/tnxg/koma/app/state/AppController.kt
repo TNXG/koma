@@ -14,11 +14,12 @@ import moe.tnxg.koma.domain.captcha.captchaAnswer
 import moe.tnxg.koma.platform.PlatformServices
 import moe.tnxg.koma.platform.SavedCredentials
 import kotlin.time.Clock
+import moe.tnxg.koma.domain.model.TimetableSnapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 
 val LocalAppController = staticCompositionLocalOf<AppController> { error("AppController not provided") }
 
-enum class Route { Welcome, Schools, Login, Semester, Home }
+enum class Route { Welcome, Schools, Login, JsonImport, Semester, Home }
 enum class LoginPhase { Idle, Preparing, Form, LoggingIn, Importing, Error }
 
 class AppController(
@@ -27,9 +28,13 @@ class AppController(
     private val scope: CoroutineScope,
 ) {
     val timetable = TimetableSession(platform)
+    private var guest by mutableStateOf(platform.readSetting("koma.guest") == "true")
+    private var importReturnRoute = Route.Schools
+    val hasSchoolAccount: Boolean get() = timetable.snapshot?.schoolId == "xjvut"
     var route by mutableStateOf(when {
         timetable.configured -> Route.Home
         timetable.snapshot != null -> Route.Semester
+        guest -> Route.Home
         else -> Route.Welcome
     })
         private set
@@ -64,7 +69,7 @@ class AppController(
 
     /** Foreground-only, at most once per day, including failed attempts. */
     fun autoUpdateIfDue(now: Long = Clock.System.now().epochSeconds) {
-        if (!autoUpdate || !timetable.configured || route != Route.Home || operation?.isActive == true) return
+        if (!hasSchoolAccount || !autoUpdate || !timetable.configured || route != Route.Home || operation?.isActive == true) return
         val last = lastAutoAttempt
         if (last != null && now >= last && now - last < 86_400) return
         platform.writeSetting("koma.lastAutoAttempt", now.toString())
@@ -73,6 +78,7 @@ class AppController(
     }
 
     fun syncNow(automatic: Boolean = false) {
+        if (!hasSchoolAccount) { openSchools(); return }
         if (operation?.isActive == true) return
         runOperation {
             backgroundSync = automatic
@@ -131,6 +137,36 @@ class AppController(
 
     fun openSchools() { operation?.cancel(); route = Route.Schools; phase = LoginPhase.Idle }
 
+    fun continueWithoutLogin() {
+        operation?.cancel()
+        phase = LoginPhase.Idle
+        message = ""
+        password = ""
+        platform.writeSetting("koma.guest", "true")
+        guest = true
+        route = if (timetable.snapshot != null && !timetable.configured) Route.Semester else Route.Home
+    }
+
+    fun openJsonImport() {
+        importReturnRoute = route
+        operation?.cancel()
+        phase = LoginPhase.Idle
+        message = ""
+        route = Route.JsonImport
+    }
+
+    fun acceptJsonTimetable(snapshot: TimetableSnapshot) {
+        operation?.cancel()
+        timetable.accept(snapshot)
+        timetable.confirm(snapshot.semester.startDate)
+        preferences.ensureAvatarSeed()
+        syncStatus = ""
+        syncNeedsLogin = false
+        showSyncConflicts = true
+        phase = LoginPhase.Idle
+        route = Route.Home
+    }
+
     fun selectSchool() {
         message = ""
         captcha = null
@@ -140,13 +176,14 @@ class AppController(
         route = Route.Login
     }
 
-    val canGoBack: Boolean get() = route == Route.Schools || route == Route.Login ||
+    val canGoBack: Boolean get() = route == Route.Schools || route == Route.Login || route == Route.JsonImport ||
         (route == Route.Semester && timetable.configured)
 
     fun back() {
         val destination = when (route) {
+            Route.JsonImport -> importReturnRoute
             Route.Login -> Route.Schools
-            Route.Schools -> if (timetable.configured) Route.Home else Route.Welcome
+            Route.Schools -> if (timetable.configured || guest) Route.Home else Route.Welcome
             Route.Semester -> if (timetable.configured) Route.Home else return
             else -> return
         }
@@ -158,11 +195,13 @@ class AppController(
     fun confirmStart(iso: String) { timetable.confirm(iso); route = Route.Home }
 
     fun logout() = runOperation {
-        platform.edu.logout()
+        if (hasSchoolAccount) platform.edu.logout()
         platform.saveCredentials(null)
         preferences.clearSessionAvatar()
         platform.images?.clearCoverCache()
         timetable.clear()
+        platform.writeSetting("koma.guest", null)
+        guest = false
         username = ""
         password = ""
         captcha = null

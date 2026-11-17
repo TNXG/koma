@@ -3,6 +3,7 @@ package moe.tnxg.koma.feature.login
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -63,6 +64,15 @@ fun LoginScreen(app: AppController) {
                         Modifier.padding(start = 2.dp, top = 10.dp), 12.5f, FontWeight.Medium, colors.danger)
                 }
             }
+        }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically) {
+            KomaTextButton("导入课表", app::openJsonImport,
+                Modifier.padding(horizontal = 8.dp, vertical = 12.dp))
+            KomaText("·", size = 13, weight = FontWeight.Bold, color = colors.ink5)
+            KomaTextButton("暂不登录", app::continueWithoutLogin,
+                Modifier.padding(horizontal = 8.dp, vertical = 12.dp), color = colors.ink3)
         }
         KomaButton(
             text = when (app.phase) {

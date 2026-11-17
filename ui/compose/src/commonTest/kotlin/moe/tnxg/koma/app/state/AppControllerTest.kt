@@ -24,6 +24,82 @@ private fun controller(platform: PlatformServices, scope: CoroutineScope) =
 
 class AppControllerTest {
     @Test
+    fun skippingLoginPersistsAnEmptyHomeWithoutInventingATimetable() = runTest {
+        val platform = OnboardingPlatform()
+        val app = controller(platform, this)
+        app.openSchools()
+        app.continueWithoutLogin()
+        assertEquals(Route.Home, app.route)
+        assertNull(app.timetable.snapshot)
+        assertEquals(Route.Home, controller(platform, backgroundScope).route)
+        app.openSchools()
+        app.back()
+        assertEquals(Route.Home, app.route)
+        app.autoUpdateIfDue()
+        testScheduler.runCurrent()
+        assertEquals(LoginPhase.Idle, app.phase)
+        assertNull(platform.readSetting("koma.lastAutoAttempt"))
+    }
+
+    @Test
+    fun skippingDuringLoginCancelsThePendingSchoolImport() = runTest {
+        val preparation = CompletableDeferred<LoginPreparation>()
+        val app = controller(OnboardingPlatform(preparation), this)
+        app.selectSchool()
+        app.prepare()
+        testScheduler.runCurrent()
+        app.continueWithoutLogin()
+        preparation.complete(LoginPreparation.Ready)
+        testScheduler.runCurrent()
+        assertEquals(Route.Home, app.route)
+        assertNull(app.timetable.snapshot)
+    }
+
+    @Test
+    fun jsonImportPersistsItsDateAndDoesNotContactSchoolOnStartup() = runTest {
+        val platform = OnboardingPlatform()
+        val app = controller(platform, this)
+        app.openJsonImport()
+        app.acceptJsonTimetable(snapshot().copy(schoolId = "local-json"))
+        assertEquals(Route.Home, app.route)
+        assertEquals("2026-09-07", app.timetable.startDate)
+        val restored = controller(platform, backgroundScope)
+        assertEquals(Route.Home, restored.route)
+        assertEquals("local-json", restored.timetable.snapshot?.schoolId)
+        restored.autoUpdateIfDue()
+        testScheduler.runCurrent()
+        assertEquals(LoginPhase.Idle, restored.phase)
+        assertNull(platform.readSetting("koma.lastAutoAttempt"))
+    }
+
+    @Test
+    fun cancellingJsonImportRestoresItsEntryPointAndKeepsTimetable() = runTest {
+        val platform = OnboardingPlatform()
+        val app = controller(platform, this)
+        app.openSchools()
+        app.openJsonImport()
+        app.back()
+        assertEquals(Route.Schools, app.route)
+        TimetableSession(platform).apply { accept(snapshot()); confirm("2026-08-31") }
+        val loaded = controller(platform, backgroundScope)
+        loaded.openJsonImport()
+        loaded.back()
+        assertEquals(Route.Home, loaded.route)
+        assertEquals("2026-08-31", loaded.timetable.startDate)
+        assertEquals("xjvut", loaded.timetable.snapshot?.schoolId)
+    }
+
+    @Test
+    fun clearingGuestSessionReturnsToWelcomeOnRestart() = runTest {
+        val platform = OnboardingPlatform()
+        val app = controller(platform, this)
+        app.continueWithoutLogin()
+        app.logout()
+        testScheduler.runCurrent()
+        assertEquals(Route.Welcome, controller(platform, backgroundScope).route)
+    }
+
+    @Test
     fun newInstallStartsAtWelcomeWithoutImporting() = runTest {
         val app = controller(OnboardingPlatform(), backgroundScope)
         assertEquals("Welcome", app.route.name)
