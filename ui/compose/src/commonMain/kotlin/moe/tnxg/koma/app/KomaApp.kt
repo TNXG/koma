@@ -20,12 +20,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import moe.tnxg.koma.app.preferences.LocalAppPreferences
 import moe.tnxg.koma.app.preferences.PreferenceStore
 import moe.tnxg.koma.app.preferences.SyncCourseReminders
@@ -40,9 +42,9 @@ import moe.tnxg.koma.feature.importing.JsonImportScreen
 import moe.tnxg.koma.feature.home.EmptyHomeScreen
 import moe.tnxg.koma.feature.onboarding.WelcomeScreen
 import moe.tnxg.koma.feature.semester.SemesterScreen
+import moe.tnxg.koma.feature.splash.KomaSplash
 import moe.tnxg.koma.platform.PlatformServices
 import moe.tnxg.koma.ui.component.button.KomaButton
-import moe.tnxg.koma.ui.component.loader.KomaLoader
 import moe.tnxg.koma.ui.component.media.LocalImageServices
 import moe.tnxg.koma.ui.component.sheet.KomaSheet
 import moe.tnxg.koma.ui.component.text.KomaText
@@ -72,13 +74,20 @@ fun KomaApp(platform: PlatformServices) {
             var controller by remember(platform) { mutableStateOf<AppController?>(null) }
             var startupError by remember { mutableStateOf<String?>(null) }
             var attempt by remember { mutableStateOf(0) }
+            var introFinished by remember { mutableStateOf(false) }
+            var destinationDrawn by remember { mutableStateOf(false) }
             LaunchedEffect(platform, attempt) {
+                startupError = null
                 try {
-                    platform.migrateLegacySettings()
-                    val app = AppController(platform, preferences, scope)
+                    // Present the branded first frame before migration or local-data decoding.
+                    withFrameNanos { }
+                    withFrameNanos { }
+                    val app = withContext(Dispatchers.Default) {
+                        platform.migrateLegacySettings()
+                        AppController(platform, preferences, scope)
+                    }
                     if (app.timetable.configured) preferences.ensureAvatarSeed()
                     controller = app
-                    startupError = null
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
@@ -91,51 +100,65 @@ fun KomaApp(platform: PlatformServices) {
                 Route.Home, Route.JsonImport -> WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)
                 else -> WindowInsets.safeDrawing
             }
-            Box(Modifier.fillMaxSize().background(KomaTheme.colors.bg).windowInsetsPadding(insets)) {
+            Box(Modifier.fillMaxSize().background(KomaTheme.colors.bg)) {
                 val app = controller
-                if (app == null) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        if (startupError == null) KomaLoader()
-                        else KomaButton("读取失败，重试", { attempt++ })
-                    }
-                } else {
-                    CompositionLocalProvider(LocalAppController provides app) {
-                    PlatformForeground { app.autoUpdateIfDue() }
-                    PlatformBackHandler(app.canGoBack, app::back)
-                    SyncCourseReminders(app.timetable.snapshot, app.timetable.startDate, preferences.value)
-                    LaunchedEffect(app.route) {
-                        if (app.route == Route.Welcome) savedPages.removeState(Route.Home.name)
-                    }
-                    savedPages.SaveableStateProvider(app.route.name) {
-                        when (app.route) {
-                            Route.Welcome -> WelcomeScreen(app::openSchools)
-                            Route.Schools -> SchoolScreen(app::selectSchool, app::back,
-                                app::continueWithoutLogin, app::openJsonImport)
-                            Route.Login -> LoginScreen(app)
-                            Route.JsonImport -> JsonImportScreen(app::back, app::acceptJsonTimetable)
-                            Route.Semester -> app.timetable.snapshot?.let {
-                                SemesterScreen(it.semester, app.timetable.startDate, app::confirmStart)
+                if (app != null && introFinished) {
+                    Box(Modifier.fillMaxSize().windowInsetsPadding(insets)) {
+                        LaunchedEffect(app) {
+                            // Keep the splash opaque through the destination's first draw.
+                            withFrameNanos { }
+                            withFrameNanos { }
+                            destinationDrawn = true
+                        }
+                        CompositionLocalProvider(LocalAppController provides app) {
+                            PlatformForeground { app.autoUpdateIfDue() }
+                            PlatformBackHandler(app.canGoBack, app::back)
+                            SyncCourseReminders(app.timetable.snapshot, app.timetable.startDate,
+                                preferences.value)
+                            LaunchedEffect(app.route) {
+                                if (app.route == Route.Welcome) savedPages.removeState(Route.Home.name)
                             }
-                            Route.Home -> app.timetable.snapshot?.let {
-                                HomeScreen(it, app.timetable.startDate, preferences, platform.notifications,
-                                    app::openSchools, app::editStart, app::logout)
-                            } ?: EmptyHomeScreen(preferences, platform.notifications,
-                                app::openSchools, app::openJsonImport, app::logout)
+                            savedPages.SaveableStateProvider(app.route.name) {
+                                when (app.route) {
+                                    Route.Welcome -> WelcomeScreen(app::openSchools)
+                                    Route.Schools -> SchoolScreen(app::selectSchool, app::back,
+                                        app::continueWithoutLogin, app::openJsonImport)
+                                    Route.Login -> LoginScreen(app)
+                                    Route.JsonImport -> JsonImportScreen(app::back, app::acceptJsonTimetable)
+                                    Route.Semester -> app.timetable.snapshot?.let {
+                                        SemesterScreen(it.semester, app.timetable.startDate,
+                                            app::confirmStart)
+                                    }
+                                    Route.Home -> app.timetable.snapshot?.let {
+                                        HomeScreen(it, app.timetable.startDate, preferences,
+                                            platform.notifications, app::openSchools, app::editStart,
+                                            app::logout)
+                                    } ?: EmptyHomeScreen(preferences, platform.notifications,
+                                        app::openSchools, app::openJsonImport, app::logout)
+                                }
+                            }
+                            SyncConflictSheet(app)
+                            var dismissed by remember(app.message) { mutableStateOf(false) }
+                            KomaSheet(
+                                open = app.route == Route.Home &&
+                                    app.phase == LoginPhase.Error && !dismissed,
+                                onDismiss = { dismissed = true },
+                            ) {
+                                Column(Modifier.padding(16.dp)) {
+                                    KomaText(app.message)
+                                    KomaButton("关闭", { dismissed = true })
+                                }
+                            }
                         }
-                    }
-                    SyncConflictSheet(app)
-                    var dismissed by remember(app.message) { mutableStateOf(false) }
-                    KomaSheet(
-                        open = app.route == Route.Home && app.phase == LoginPhase.Error && !dismissed,
-                        onDismiss = { dismissed = true },
-                    ) {
-                        Column(Modifier.padding(16.dp)) {
-                            KomaText(app.message)
-                            KomaButton("关闭", { dismissed = true })
-                        }
-                    }
                     }
                 }
+                // First show the intro, then prepare the destination, then reveal its first frame.
+                KomaSplash(
+                    visible = !destinationDrawn,
+                    error = startupError,
+                    onRetry = { attempt++ },
+                    onIntroFinished = { introFinished = true },
+                )
             }
         }
     }

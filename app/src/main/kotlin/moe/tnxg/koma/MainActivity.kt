@@ -1,6 +1,7 @@
 package moe.tnxg.koma
 
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,7 +19,11 @@ class MainActivity : ComponentActivity(), NotificationPermissionHost, PhotoPicke
     private val photoPicker = PhotoPickerRequester(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.AppTheme)
         super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            splashScreen.setOnExitAnimationListener { it.remove() }
+        }
         enableEdgeToEdge()
         setContent { KomaApp(remember { AndroidPlatformServices(this) }) }
     }
