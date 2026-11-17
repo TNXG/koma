@@ -47,9 +47,9 @@ import org.jetbrains.compose.resources.painterResource
 
 const val APP_VERSION = "0.0.1"
 const val PROJECT_URL = "https://github.com/tnxg/koma"
-private const val PROJECT_HOST = "github.com/tnxg/koma"
+private const val PROJECT_PATH = "tnxg/koma"
 private const val GITCODE_URL = "https://gitcode.com/gxdev_lab/koma"
-private const val GITCODE_HOST = "gitcode.com/gxdev_lab/koma"
+private const val GITCODE_PATH = "gxdev_lab/koma"
 private const val ISSUES_URL = "$PROJECT_URL/issues"
 private const val AGREEMENT = "AGPL-3.0"
 private const val SLOGAN = "列车终将开往下一站，那舞台呢？我们呢？"
@@ -95,14 +95,14 @@ fun AboutScreen(
             SettingsNavRow(
                 title = "GitHub",
                 glyph = KomaGlyph.Code,
-                value = PROJECT_HOST,
+                value = PROJECT_PATH,
                 onClick = { open(PROJECT_URL) },
             )
             SettingsDivider()
             SettingsNavRow(
                 title = "GitCode",
                 glyph = KomaGlyph.Code,
-                value = GITCODE_HOST,
+                value = GITCODE_PATH,
                 onClick = { open(GITCODE_URL) },
             )
             SettingsDivider()
