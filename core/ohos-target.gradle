@@ -1,0 +1,9 @@
+// OHOS spike 专属脚本（Groovy）：仅在 enableOhos 属性存在时被 core/build.gradle.kts 应用。
+// 使用 Groovy 动态分发，避免 ohosArm64() 在官方 KGP classpath 下的静态编译错误。
+configure(project.extensions.getByName("kotlin")) {
+    ohosArm64 {
+        binaries {
+            sharedLib("kn")
+        }
+    }
+}

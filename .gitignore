@@ -1,4 +1,5 @@
 .gradle/
+.hvigor/
 .kotlin/
 **/build/
 .tools/
@@ -13,3 +14,4 @@ capacitor/android/.gradle/
 capacitor/android/local.properties
 .ryugi/
 android.p12
+.opencode/

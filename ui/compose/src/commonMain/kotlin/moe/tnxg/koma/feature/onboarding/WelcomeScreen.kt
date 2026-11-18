@@ -23,15 +23,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import moe.tnxg.koma.resources.Res
-import moe.tnxg.koma.resources.koma_icon
 import moe.tnxg.koma.ui.component.button.KomaButton
 import moe.tnxg.koma.ui.component.button.KomaTextButton
+import moe.tnxg.koma.ui.component.icon.KomaAppIcon
 import moe.tnxg.koma.ui.component.icon.KomaGlyph
 import moe.tnxg.koma.ui.component.icon.KomaIcon
 import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.theme.KomaTheme
-import org.jetbrains.compose.resources.painterResource
 
 private val features = listOf(
     KomaGlyph.Calendar to "今日日程，清晰直观",
@@ -47,7 +45,7 @@ fun WelcomeScreen(onStart: () -> Unit, onSkip: () -> Unit, onJsonImport: () -> U
         Column(Modifier.widthIn(max = 430.dp).fillMaxSize()) {
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp, vertical = 48.dp)) {
-                Image(painterResource(Res.drawable.koma_icon), "Koma Pro",
+                Image(KomaAppIcon, "Koma Pro",
                     Modifier.size(84.dp).shadow(14.dp, iconShape, ambientColor = colors.accent,
                         spotColor = colors.accent).clip(iconShape).border(1.dp, colors.line2, iconShape))
                 Spacer(Modifier.height(40.dp))

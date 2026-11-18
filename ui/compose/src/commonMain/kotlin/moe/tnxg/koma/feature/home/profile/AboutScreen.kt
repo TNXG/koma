@@ -30,8 +30,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
-import moe.tnxg.koma.resources.Res
-import moe.tnxg.koma.resources.koma_icon
+import moe.tnxg.koma.ui.component.icon.KomaAppIcon
 import moe.tnxg.koma.ui.component.icon.KomaGlyph
 import moe.tnxg.koma.ui.component.icon.KomaIcon
 import moe.tnxg.koma.ui.component.list.SettingsDivider
@@ -43,7 +42,6 @@ import moe.tnxg.koma.ui.component.media.downloadCoverBytes
 import moe.tnxg.koma.ui.component.page.SubpageScaffold
 import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.theme.KomaTheme
-import org.jetbrains.compose.resources.painterResource
 
 const val APP_VERSION = "0.0.1"
 const val PROJECT_URL = "https://github.com/tnxg/koma"
@@ -139,7 +137,7 @@ private fun AboutHeroCard() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
-            painter = painterResource(Res.drawable.koma_icon),
+            imageVector = KomaAppIcon,
             contentDescription = null,
             modifier = Modifier.size(84.dp).clip(RoundedCornerShape(23.dp)),
         )

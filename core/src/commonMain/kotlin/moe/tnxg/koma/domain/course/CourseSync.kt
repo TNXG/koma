@@ -128,7 +128,8 @@ internal fun sameCourse(left: Course?, right: Course?): Boolean = when {
 }
 
 private fun normalizedNotes(course: Course): Map<Int, String> =
-    course.sessionNotes.filterValues { it.isNotBlank() }.toSortedMap()
+    course.sessionNotes.filterValues { it.isNotBlank() }.entries
+        .sortedBy { it.key }.associate { it.key to it.value }
 
 private fun sameWeeks(left: List<Int>, right: List<Int>): Boolean =
     left == right || left.all { it in right } && right.all { it in left }
