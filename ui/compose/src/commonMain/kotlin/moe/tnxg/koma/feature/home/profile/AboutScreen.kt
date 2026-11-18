@@ -152,13 +152,6 @@ private fun AboutHeroCard() {
             letterSpacing = -0.6f,
         )
         KomaText(
-            text = "版本 $APP_VERSION",
-            modifier = Modifier.padding(top = 5.dp),
-            size = 12.5f,
-            weight = FontWeight.Medium,
-            color = c.ink4,
-        )
-        KomaText(
             text = SLOGAN,
             modifier = Modifier.padding(top = 10.dp),
             size = 12.5f,
