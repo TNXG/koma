@@ -30,8 +30,10 @@ import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.theme.KomaTheme
 
 @Composable
-internal fun WeekSelector(open: Boolean, snapshot: TimetableSnapshot, startDate: String, selectedWeek: Int,
-    today: LocalDate, onPick: (Int) -> Unit, onDismiss: () -> Unit) {
+internal fun WeekSelector(
+    open: Boolean, snapshot: TimetableSnapshot, startDate: String, selectedWeek: Int,
+    today: LocalDate, onPick: (Int) -> Unit, onDismiss: () -> Unit
+) {
     val c = KomaTheme.colors
     val total = snapshot.semester.totalWeeks.coerceAtLeast(1)
     val first = remember(startDate) { LocalDate.parse(startDate) }
@@ -61,7 +63,8 @@ internal fun WeekSelector(open: Boolean, snapshot: TimetableSnapshot, startDate:
         map
     }
     val list = rememberLazyListState()
-    fun monthIndex(date: LocalDate) = months.indexOfFirst { it.year == date.year && it.month.number == date.month.number }
+    fun monthIndex(date: LocalDate) =
+        months.indexOfFirst { it.year == date.year && it.month.number == date.month.number }
     LaunchedEffect(open) {
         if (open) list.scrollToItem(monthIndex(addDays(mondayOf(first), (selectedWeek - 1) * 7)).coerceAtLeast(0))
     }
@@ -83,8 +86,10 @@ internal fun WeekSelector(open: Boolean, snapshot: TimetableSnapshot, startDate:
 }
 
 @Composable
-private fun MonthBlock(month: LocalDate, startDate: LocalDate, totalWeeks: Int, semester: String,
-    selectedWeek: Int, today: LocalDate, counts: Map<LocalDate, Int>, onPick: (Int) -> Unit) {
+private fun MonthBlock(
+    month: LocalDate, startDate: LocalDate, totalWeeks: Int, semester: String,
+    selectedWeek: Int, today: LocalDate, counts: Map<LocalDate, Int>, onPick: (Int) -> Unit
+) {
     val c = KomaTheme.colors
     val next = month.plus(DatePeriod(months = 1))
     val length = (next.toEpochDays() - month.toEpochDays()).toInt()
@@ -99,18 +104,24 @@ private fun MonthBlock(month: LocalDate, startDate: LocalDate, totalWeeks: Int, 
     Column(Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
         Row(Modifier.padding(top = 10.dp, bottom = 6.dp), verticalAlignment = Alignment.Bottom) {
             KomaText("${month.month.number}月", size = 19, weight = FontWeight.ExtraBold, letterSpacing = -.4f)
-            KomaText("$semester 第 $firstWeek–$lastWeek 周", Modifier.padding(start = 6.dp, bottom = 2.dp),
-                size = 11.5f, weight = FontWeight.SemiBold, color = c.ink4, maxLines = 1)
+            KomaText(
+                "$semester 第 $firstWeek–$lastWeek 周", Modifier.padding(start = 6.dp, bottom = 2.dp),
+                size = 11.5f, weight = FontWeight.SemiBold, color = c.ink4, maxLines = 1
+            )
         }
         cells.chunked(7).forEach { row ->
             val days = row.filterNotNull()
             val week = days.firstOrNull()?.let { weekIndex(startDate.toString(), it) } ?: 0
             val on = week == selectedWeek
-            Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)
-                .background(if (on) c.accentSoft else Color.Transparent, RoundedCornerShape(12.dp))) {
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 1.dp)
+                    .background(if (on) c.accentSoft else Color.Transparent, RoundedCornerShape(12.dp))
+            ) {
                 Box(Modifier.width(24.dp).height(42.dp), contentAlignment = Alignment.Center) {
-                    if (week in 1..totalWeeks) KomaText("$week", size = 10.5f, weight = FontWeight.Bold,
-                        color = if (on) c.accent else c.ink5)
+                    if (week in 1..totalWeeks) KomaText(
+                        "$week", size = 10.5f, weight = FontWeight.Bold,
+                        color = if (on) c.accent else c.ink5
+                    )
                 }
                 row.forEach { date ->
                     if (date == null) {
@@ -118,19 +129,30 @@ private fun MonthBlock(month: LocalDate, startDate: LocalDate, totalWeeks: Int, 
                     } else {
                         val isToday = date == today
                         val n = counts[date] ?: 0
-                        Column(Modifier.weight(1f).height(42.dp)
-                            .dockPress { onPick(weekIndex(startDate.toString(), date).coerceIn(1, totalWeeks)) },
-                            horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(
+                            Modifier.weight(1f).height(42.dp)
+                                .dockPress { onPick(weekIndex(startDate.toString(), date).coerceIn(1, totalWeeks)) },
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Box(Modifier.fillMaxWidth().weight(1f)) {
-                                KomaText(date.day.toString(), Modifier.align(Alignment.Center),
+                                KomaText(
+                                    date.day.toString(), Modifier.align(Alignment.Center),
                                     size = 15, lineHeight = 1f, weight = FontWeight.Bold,
-                                    color = if (isToday || on) c.accent else if (n > 0) c.ink else c.ink5)
+                                    color = if (isToday || on) c.accent else if (n > 0) c.ink else c.ink5
+                                )
                                 if (n > 0) {
-                                    KomaText("$n", Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 2.dp),
+                                    KomaText(
+                                        "$n", Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 2.dp),
                                         size = 9, weight = FontWeight.Bold,
-                                        color = if (isToday || on) c.accent2 else c.ink5)
-                                    Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 3.dp).size(3.dp)
-                                        .background(if (isToday || on) c.accent else c.ink5, RoundedCornerShape(99.dp)))
+                                        color = if (isToday || on) c.accent2 else c.ink5
+                                    )
+                                    Box(
+                                        Modifier.align(Alignment.BottomCenter).padding(bottom = 3.dp).size(3.dp)
+                                            .background(
+                                                if (isToday || on) c.accent else c.ink5,
+                                                RoundedCornerShape(99.dp)
+                                            )
+                                    )
                                 }
                             }
                         }
