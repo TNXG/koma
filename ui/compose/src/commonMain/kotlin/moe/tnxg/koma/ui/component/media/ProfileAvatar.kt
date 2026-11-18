@@ -20,13 +20,13 @@ import kotlinx.coroutines.CancellationException
 import moe.tnxg.koma.ui.component.loader.KomaLoader
 import moe.tnxg.koma.ui.theme.KomaTheme
 
-/** The user's own photo when one was chosen, otherwise the avatar generated from [seed]. */
+/** Stable identity image: the user's chosen photo, otherwise the generated avatar for [seed]. */
 @Composable
 fun ProfileAvatar(seed: String, photoPath: String, modifier: Modifier = Modifier) {
     if (photoPath.isNotBlank()) {
         LocalPhoto(path = photoPath, modifier = modifier)
     } else {
-        KodamaAvatar(seed = seed, modifier = modifier)
+        KodamaAvatar(seed = seed, modifier = modifier, animate = false)
     }
 }
 

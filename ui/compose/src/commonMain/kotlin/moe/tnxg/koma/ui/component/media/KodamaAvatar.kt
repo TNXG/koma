@@ -43,18 +43,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import moe.tnxg.koma.app.preferences.LocalAppPreferences
 
-/** Generated avatar for one persisted [seed]; always circular. */
+/** Generated avatar for one persisted [seed]; set [animate] to false for a stable identity image. */
 @Composable
-fun KodamaAvatar(seed: String, modifier: Modifier = Modifier) {
+fun KodamaAvatar(seed: String, modifier: Modifier = Modifier, animate: Boolean = true) {
     val resolved = remember(seed) { resolveKodama(kodamaConfigForSeed(seed)) }
-    val reduceMotion = LocalAppPreferences.current.reduceMotion
-    KodamaFace(resolved = resolved, reduceMotion = reduceMotion, modifier = modifier)
+    val animationsEnabled = animate && !LocalAppPreferences.current.reduceMotion
+    KodamaFace(resolved = resolved, animationsEnabled = animationsEnabled, modifier = modifier)
 }
 
 @Composable
 private fun KodamaFace(
     resolved: KodamaResolved,
-    reduceMotion: Boolean,
+    animationsEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val config = resolved.config
@@ -70,13 +70,13 @@ private fun KodamaFace(
     val glassesActive = showAccessories && accessoryShape != null
     val showEyes = !glassesActive
 
-    val hasEntrance = !reduceMotion && KodamaAnimation.Entrance in animations
-    val entranceProgress = remember(resolved, reduceMotion) { Animatable(if (hasEntrance) 0f else 1f) }
-    val entranceEyeScale = remember(resolved, reduceMotion) {
+    val hasEntrance = animationsEnabled && KodamaAnimation.Entrance in animations
+    val entranceProgress = remember(resolved, animationsEnabled) { Animatable(if (hasEntrance) 0f else 1f) }
+    val entranceEyeScale = remember(resolved, animationsEnabled) {
         Animatable(if (hasEntrance && !glassesActive) 0.05f else 1f)
     }
 
-    LaunchedEffect(resolved, reduceMotion) {
+    LaunchedEffect(resolved, animationsEnabled) {
         if (!hasEntrance) {
             entranceProgress.snapTo(1f)
             entranceEyeScale.snapTo(1f)
@@ -96,19 +96,19 @@ private fun KodamaFace(
     }
 
     val infinite = rememberInfiniteTransition(label = "kodama")
-    val blinkScaleY by rememberKodamaBlink(infinite, resolved.seed, !reduceMotion && KodamaAnimation.Blink in animations)
-    val floatFrac by rememberKodamaFloat(infinite, !reduceMotion && KodamaAnimation.Float in animations)
-    val swayFrac by rememberKodamaSway(infinite, !reduceMotion && KodamaAnimation.Sway in animations)
-    val wanderX by rememberKodamaEyeWanderX(infinite, !reduceMotion && KodamaAnimation.EyeWander in animations)
-    val wanderY by rememberKodamaEyeWanderY(infinite, !reduceMotion && KodamaAnimation.EyeWander in animations)
+    val blinkScaleY by rememberKodamaBlink(infinite, resolved.seed, animationsEnabled && KodamaAnimation.Blink in animations)
+    val floatFrac by rememberKodamaFloat(infinite, animationsEnabled && KodamaAnimation.Float in animations)
+    val swayFrac by rememberKodamaSway(infinite, animationsEnabled && KodamaAnimation.Sway in animations)
+    val wanderX by rememberKodamaEyeWanderX(infinite, animationsEnabled && KodamaAnimation.EyeWander in animations)
+    val wanderY by rememberKodamaEyeWanderY(infinite, animationsEnabled && KodamaAnimation.EyeWander in animations)
     val eyebrowBounceFrac by rememberKodamaEyebrowBounce(
         infinite,
-        !reduceMotion && KodamaAnimation.EyebrowBounce in animations,
+        animationsEnabled && KodamaAnimation.EyebrowBounce in animations,
     )
     val glanceProgress by rememberKodamaGlance(
         infinite,
         resolved.seed,
-        !reduceMotion && KodamaAnimation.Glance in animations && depth != KodamaDepth.None,
+        animationsEnabled && KodamaAnimation.Glance in animations && depth != KodamaDepth.None,
     )
 
     val containerScale = 0.8f + 0.2f * entranceProgress.value
