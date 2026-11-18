@@ -8,8 +8,7 @@ import moe.tnxg.koma.ui.component.icon.KomaGlyph
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
@@ -54,11 +53,10 @@ internal fun CourseSlot(row: CourseRow, first: Boolean, last: Boolean, minutes: 
         }
         CourseRail(row.state,tone,row.pct,first,last,Modifier.width(18.dp).fillMaxHeight())
         Box(Modifier.weight(1f).padding(vertical=7.dp)) {
-            val shape=RoundedCornerShape(16.dp)
+            val shape=CourseTicketShape
             val fill=if(past)Brush.linearGradient(listOf(c.surface2,c.surface2)) else Brush.linearGradient(listOf(lerp(c.surface,tone,.09f),lerp(c.surface,tone,.03f)))
-            Column(Modifier.fillMaxWidth().background(fill,shape)
+            Column(Modifier.fillMaxWidth().clip(shape).background(fill,shape)
                 .then(if(row.state==RowState.Now)Modifier.border(1.5.dp,tone.copy(alpha=.32f),shape) else Modifier)
-                .drawWithContent { drawContent(); drawCircle(c.bg,6.dp.toPx(),Offset(0f,size.height/2)); drawCircle(c.bg,6.dp.toPx(),Offset(size.width,size.height/2)) }
                 .padding(start=16.dp,end=14.dp,top=padding,bottom=padding)) {
                 KomaText(row.course.name,Modifier.padding(end=26.dp),size=15.5f,lineHeight=1.28f,weight=FontWeight.Bold,color=if(past)c.ink4 else c.ink,letterSpacing=-.155f)
                 row.course.location?.takeIf{prefs.showRoom && it.isNotEmpty()}?.let { text ->
