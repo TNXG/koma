@@ -50,6 +50,7 @@ import moe.tnxg.koma.ui.component.page.pageAnimationSpec
 fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,store:PreferenceStore,notifications:NotificationService?,
     onReimport:()->Unit,onEditStart:()->Unit,onLogout:()->Unit) {
     val c=KomaTheme.colors
+    val active=LocalPageActive.current
     val density=LocalDensity.current
     val backdrop=rememberLayerBackdrop { drawRect(c.bg);drawContent() }
     val layer=backdrop.graphicsLayer
@@ -79,7 +80,7 @@ fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,store:PreferenceStore
         if(prefs.reduceMotion) pages.scrollToPage(targetPage)
         else pages.animateScrollToPage(targetPage,animationSpec=pageAnimationSpec(false))
     }
-    PlatformBackHandler(profile) {
+    PlatformBackHandler(active && profile) {
         if(profilePage!=MePage.Main) profilePage=profilePage.parent() else profile=false
     }
     var calendar by remember {mutableStateOf(false)}
@@ -131,16 +132,16 @@ fun HomeScreen(snapshot:TimetableSnapshot,startDate:String,store:PreferenceStore
                 HomeTimeline(blocks,scroll,minutes,selected==todayDate,backdrop)
                 HomeHeader(snapshot,startDate,selected,todayDate,minutes,scroll,layer){enter.value}
                 // Hidden edge controls must not exclude the system back gesture over profile pages.
-                if(!profile) BoxWithConstraints(Modifier.fillMaxSize()){
+                if(active && !profile) BoxWithConstraints(Modifier.fillMaxSize()){
                     val islandHeight=if(ISLAND_MAX_HEIGHT<maxHeight*.44f)ISLAND_MAX_HEIGHT else maxHeight*.44f
                     DateIsland(days,counts,selected,todayDate,recenter,islandHeight,::jump,{calendar=true},layer,
                         Modifier.align(Alignment.BottomEnd).padding(bottom=maxHeight*.22f).navigationBarsPadding())
                 }
             }else if(page==1){
                 WeekScreen(snapshot,startDate,selected,todayDate,minutes,{if(weekly && !profile)selected=clamp(it)},
-                    {profile=false;weekly=false;jump(it)},{profile=false;weekly=false;jump(todayDate)},weekly && !profile,weekRecenter,{weekOverlay=it})
+                    {profile=false;weekly=false;jump(it)},{profile=false;weekly=false;jump(todayDate)},active && weekly && !profile,weekRecenter,{weekOverlay=it})
             }else{
-                CompositionLocalProvider(LocalPageActive provides profile) {
+                CompositionLocalProvider(LocalPageActive provides (active && profile)) {
                     ProfileDestinationHost(profilePage,store,snapshot,startDate,notifications,
                         {profilePage=it},onEditStart,onReimport,onLogout)
                 }

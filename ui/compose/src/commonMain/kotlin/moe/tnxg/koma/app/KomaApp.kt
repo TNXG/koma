@@ -53,6 +53,7 @@ import moe.tnxg.koma.ui.theme.KomaTheme
 import moe.tnxg.koma.app.state.LocalAppController
 import moe.tnxg.koma.app.state.SyncConflictSheet
 import moe.tnxg.koma.ui.platform.PlatformForeground
+import moe.tnxg.koma.ui.component.page.PageTransition
 
 @Composable
 fun KomaApp(platform: PlatformServices) {
@@ -94,16 +95,10 @@ fun KomaApp(platform: PlatformServices) {
                     startupError = error.message ?: "本机数据读取失败"
                 }
             }
-            val insets = when (controller?.route) {
-                // These draw their own status/navigation insets, and their sheets must reach the
-                // screen edge instead of stopping above a bg-colored band.
-                Route.Home, Route.JsonImport -> WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)
-                else -> WindowInsets.safeDrawing
-            }
             Box(Modifier.fillMaxSize().background(KomaTheme.colors.bg)) {
                 val app = controller
                 if (app != null && introFinished) {
-                    Box(Modifier.fillMaxSize().windowInsetsPadding(insets)) {
+                    Box(Modifier.fillMaxSize()) {
                         LaunchedEffect(app) {
                             // Keep the splash opaque through the destination's first draw.
                             withFrameNanos { }
@@ -118,23 +113,39 @@ fun KomaApp(platform: PlatformServices) {
                             LaunchedEffect(app.route) {
                                 if (app.route == Route.Welcome) savedPages.removeState(Route.Home.name)
                             }
-                            savedPages.SaveableStateProvider(app.route.name) {
-                                when (app.route) {
-                                    Route.Welcome -> WelcomeScreen(app::openSchools)
-                                    Route.Schools -> SchoolScreen(app::selectSchool, app::back,
-                                        app::continueWithoutLogin, app::openJsonImport)
-                                    Route.Login -> LoginScreen(app)
-                                    Route.JsonImport -> JsonImportScreen(app::back, app::acceptJsonTimetable)
-                                    Route.Semester -> app.timetable.snapshot?.let {
-                                        SemesterScreen(it.semester, app.timetable.startDate,
-                                            app::confirmStart)
+                            PageTransition(app.route, depth = {
+                                when (it) {
+                                    Route.Welcome, Route.Home -> 0
+                                    Route.Schools -> 1
+                                    Route.Login, Route.JsonImport -> 2
+                                    Route.Semester -> 3
+                                }
+                            }) { route ->
+                                val insets = when (route) {
+                                    Route.Home, Route.JsonImport ->
+                                        WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)
+                                    else -> WindowInsets.safeDrawing
+                                }
+                                Box(Modifier.fillMaxSize().windowInsetsPadding(insets)) {
+                                    savedPages.SaveableStateProvider(route.name) {
+                                        when (route) {
+                                            Route.Welcome -> WelcomeScreen(app::openSchools,
+                                                app::continueWithoutLogin, app::openJsonImport)
+                                            Route.Schools -> SchoolScreen(app::selectSchool, app::back)
+                                            Route.Login -> LoginScreen(app)
+                                            Route.JsonImport -> JsonImportScreen(app::back, app::acceptJsonTimetable)
+                                            Route.Semester -> app.timetable.snapshot?.let {
+                                                SemesterScreen(it.semester, app.timetable.startDate,
+                                                    app::confirmStart)
+                                            }
+                                            Route.Home -> app.timetable.snapshot?.let {
+                                                HomeScreen(it, app.timetable.startDate, preferences,
+                                                    platform.notifications, app::openSchools, app::editStart,
+                                                    app::logout)
+                                            } ?: EmptyHomeScreen(preferences, platform.notifications,
+                                                app::openSchools, app::openJsonImport, app::logout)
+                                        }
                                     }
-                                    Route.Home -> app.timetable.snapshot?.let {
-                                        HomeScreen(it, app.timetable.startDate, preferences,
-                                            platform.notifications, app::openSchools, app::editStart,
-                                            app::logout)
-                                    } ?: EmptyHomeScreen(preferences, platform.notifications,
-                                        app::openSchools, app::openJsonImport, app::logout)
                                 }
                             }
                             SyncConflictSheet(app)

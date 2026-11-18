@@ -3,7 +3,6 @@ package moe.tnxg.koma.feature.login
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -56,7 +55,7 @@ internal val SCHOOLS = listOf(
 internal val SCHOOL_NAME = SCHOOLS.first().name
 
 @Composable
-fun SchoolScreen(onSelect: () -> Unit, onBack: () -> Unit, onSkip: () -> Unit, onJsonImport: () -> Unit) {
+fun SchoolScreen(onSelect: () -> Unit, onBack: () -> Unit) {
     val colors = KomaTheme.colors
     var query by rememberSaveable { mutableStateOf("") }
     val keyword = query.trim()
@@ -86,15 +85,6 @@ fun SchoolScreen(onSelect: () -> Unit, onBack: () -> Unit, onSkip: () -> Unit, o
                     KomaText("暂未收录的学校会陆续支持。账号凭据仅加密保存在本机。",
                         Modifier.padding(horizontal = 2.dp, vertical = 16.dp), size = 12, color = colors.ink3)
                 }
-            }
-            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically) {
-                KomaTextButton("导入课表", onJsonImport,
-                    Modifier.padding(horizontal = 8.dp, vertical = 12.dp))
-                KomaText("·", size = 13, weight = FontWeight.Bold, color = colors.ink5)
-                KomaTextButton("暂不登录", onSkip, Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
-                    color = colors.ink3)
             }
         }
     }

@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import moe.tnxg.koma.resources.Res
 import moe.tnxg.koma.resources.koma_icon
 import moe.tnxg.koma.ui.component.button.KomaButton
+import moe.tnxg.koma.ui.component.button.KomaTextButton
 import moe.tnxg.koma.ui.component.icon.KomaGlyph
 import moe.tnxg.koma.ui.component.icon.KomaIcon
 import moe.tnxg.koma.ui.component.text.KomaText
@@ -39,7 +40,7 @@ private val features = listOf(
 )
 
 @Composable
-fun WelcomeScreen(onStart: () -> Unit) {
+fun WelcomeScreen(onStart: () -> Unit, onSkip: () -> Unit, onJsonImport: () -> Unit) {
     val colors = KomaTheme.colors
     val iconShape = RoundedCornerShape(24.dp)
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -68,6 +69,16 @@ fun WelcomeScreen(onStart: () -> Unit) {
             KomaText("列车终将开往下一站，那舞台呢？我们呢？",
                 Modifier.align(Alignment.CenterHorizontally).padding(horizontal = 28.dp),
                 size = 12, color = colors.ink4, letterSpacing = -.2f)
+            Row(
+                Modifier.fillMaxWidth().padding(top = 12.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                KomaTextButton("导入离线课表", onJsonImport, Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+                KomaText("·", size = 13, color = colors.ink5)
+                KomaTextButton("暂不登录", onSkip, Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    color = colors.ink3)
+            }
             KomaButton("开始使用", onStart,
                 Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp))
         }
