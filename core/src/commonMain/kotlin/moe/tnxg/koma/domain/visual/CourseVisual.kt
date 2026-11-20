@@ -5,6 +5,7 @@ enum class CourseIcon { Translate, Formula, Fitness, Code, Flask, Bank, Palette,
 data class CourseVisual(val icon: CourseIcon, val tone: CourseTone)
 private data class Rule(val words: List<String>, val icon: CourseIcon, val tone: CourseTone)
 private val rules = listOf(
+    Rule(listOf("心理"), CourseIcon.Heart, CourseTone.Rose),
     Rule(listOf("英语", "english", "外语", "日语", "俄语"), CourseIcon.Translate, CourseTone.Blue),
     Rule(listOf("数学", "高数", "代数", "统计", "概率", "微积分"), CourseIcon.Formula, CourseTone.Amber),
     Rule(listOf("体育", "健康", "运动"), CourseIcon.Fitness, CourseTone.Rose),
@@ -14,7 +15,6 @@ private val rules = listOf(
     Rule(listOf("设计", "美术", "艺术", "音乐", "绘画"), CourseIcon.Palette, CourseTone.Violet),
     Rule(listOf("就业", "创业", "职业", "管理", "经济"), CourseIcon.Briefcase, CourseTone.Orange),
     Rule(listOf("电子", "电路", "机械", "自动化", "嵌入式", "单片机"), CourseIcon.Chip, CourseTone.Teal),
-    Rule(listOf("心理"), CourseIcon.Heart, CourseTone.Rose),
 )
 private val fallback = listOf(CourseTone.Blue, CourseTone.Violet, CourseTone.Green, CourseTone.Orange, CourseTone.Teal, CourseTone.Amber)
 fun courseVisual(courseName: String): CourseVisual {

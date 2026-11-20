@@ -17,6 +17,9 @@ class DomainTest {
         assertEquals(CourseVisual(CourseIcon.Translate, CourseTone.Blue), courseVisual("英语程序设计"))
         assertEquals(CourseVisual(CourseIcon.Code, CourseTone.Teal), courseVisual(" JAVA "))
         assertEquals(CourseVisual(CourseIcon.Book, CourseTone.Amber), courseVisual("A"))
+        // 「健康」之前命中体育规则，心理健康教育曾被画成肌肉图标。
+        assertEquals(CourseVisual(CourseIcon.Heart, CourseTone.Rose), courseVisual("大学生心理健康教育"))
+        assertEquals(CourseVisual(CourseIcon.Fitness, CourseTone.Rose), courseVisual("体育"))
         assertEquals("课程 名称", cleanText(" \n课程\u00a0 名称\t"))
     }
     @Test fun independentWeekSegmentsRetainValidParts() {
