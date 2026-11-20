@@ -16,7 +16,7 @@ import moe.tnxg.koma.domain.calendar.weekdayLabel
 import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.theme.KomaTheme
 
-internal data class DateGeometry(val x:Float,val y:Float,val height:Float,val font:Float)
+internal data class DateGeometry(val x:Float,val y:Float,val height:Float,val font:Float,val emphasized:Boolean)
 
 @Composable
 internal fun FlyingDate(date:LocalDate,geometry:DateGeometry,target:DateGeometry,rowTop:Float,p:Float) {
@@ -35,8 +35,8 @@ internal fun FlyingDate(date:LocalDate,geometry:DateGeometry,target:DateGeometry
         scaleX=dateFlightScale(sourceFont,targetFont,p);scaleY=scaleX
         alpha=1-smooth(.82f,1f,p)
     }) {
-        KomaText(formatMonthDay(date),size=geometry.font,lineHeight=1.2f,weight=if(geometry.font==17f)FontWeight.ExtraBold else FontWeight.Bold,
-            color=if(geometry.font==17f)c.ink else lerp(c.ink3,c.ink,e),letterSpacing=if(geometry.font==17f)-.34f else 0f)
+        KomaText(formatMonthDay(date),size=geometry.font,lineHeight=1.2f,weight=if(geometry.emphasized)FontWeight.ExtraBold else FontWeight.Bold,
+            color=if(geometry.emphasized)c.ink else lerp(c.ink3,c.ink,e),letterSpacing=if(geometry.emphasized)-.34f else 0f)
         KomaText(" 周${weekdayLabel(date)}",size=geometry.font,lineHeight=1.2f,weight=FontWeight.SemiBold,color=c.ink5)
     }
 }

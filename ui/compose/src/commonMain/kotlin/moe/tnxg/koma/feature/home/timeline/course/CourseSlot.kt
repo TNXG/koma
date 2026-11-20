@@ -74,7 +74,7 @@ internal fun CourseSlot(row: CourseRow, first: Boolean, last: Boolean, minutes: 
                 if(hint!=null) KomaText(hint,Modifier.padding(top=9.dp).background(if(row.state==RowState.Now)tone else tone.copy(alpha=.12f),RoundedCornerShape(8.dp)).padding(horizontal=8.dp,vertical=3.dp),
                     size=11.5f,weight=if(row.state==RowState.Now)FontWeight.Bold else FontWeight.SemiBold,color=if(row.state==RowState.Now)c.surface else lerp(c.ink,tone,.75f))
             }
-            HomeIcon(courseIcon(visual.icon),if(past)c.ink5 else tone.copy(alpha=.72f),Modifier.align(Alignment.TopEnd).padding(top=12.dp,end=12.dp).size(24.dp).graphicsLayer{rotationZ=-4f})
+            HomeIcon(courseIcon(visual.icon),if(past)c.ink5 else tone.copy(alpha=.72f),Modifier.align(Alignment.TopEnd).padding(top=11.dp,end=11.dp).size(28.dp).graphicsLayer{rotationZ=-4f})
         }
     }
 }

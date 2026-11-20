@@ -31,14 +31,15 @@ internal fun HomeHead(snapshot: TimetableSnapshot, startDate: String, date: Loca
     onHeight:(Float)->Unit,
 ) {
     val density=LocalDensity.current
+    val dateScale=rememberDateTypeScale()
     var contentHeight by remember { mutableFloatStateOf(90f) }
     var headOrigin by remember { mutableStateOf(Offset.Unspecified) }
     var stackOrigin by remember { mutableStateOf(Offset.Unspecified) }
     var titleHeight by remember(density) { mutableFloatStateOf(0f) }
-    val target=remember(titleHeight,stackOrigin,headOrigin,density) {
+    val target=remember(titleHeight,stackOrigin,headOrigin,density,dateScale) {
         if(headOrigin.isSpecified && stackOrigin.isSpecified && titleHeight>0f) with(density) {
             DateGeometry((stackOrigin.x-headOrigin.x).toDp().value,
-                (stackOrigin.y-headOrigin.y).toDp().value,titleHeight,26f)
+                (stackOrigin.y-headOrigin.y).toDp().value,titleHeight,26f*dateScale,true)
         } else null
     }
     val incoming by remember(motion) { derivedStateOf { motion().incoming } }
@@ -95,6 +96,7 @@ private fun HeaderLayer(snapshot: TimetableSnapshot, startDate: String, date: Lo
     onTitlePositioned: ((androidx.compose.ui.layout.LayoutCoordinates)->Unit)? = null,
 ) {
     val c = KomaTheme.colors
+    val dateScale = rememberDateTypeScale()
     val p = progress()
     val summary = remember(snapshot,startDate,date,today,minutes) {
         describeDay(snapshot,startDate,date,today,minutes)
@@ -105,8 +107,8 @@ private fun HeaderLayer(snapshot: TimetableSnapshot, startDate: String, date: Lo
                 alpha = if (!incoming) 1-smooth(0f,.55f,p) else if(docks) smooth(.72f,1f,p) else smooth(.25f,1f,p)
                 translationY = (if(!incoming) -10*p else if(docks) 0f else (1-p)*12).dp.toPx()
             }) {
-                KomaText(formatMonthDay(date), size=26, lineHeight=1.2f, weight=FontWeight.ExtraBold, letterSpacing=-.52f)
-                KomaText(" 周${weekdayLabel(date)}", size=26, lineHeight=1.2f, weight=FontWeight.Bold, color=c.ink5, letterSpacing=-.52f)
+                KomaText(formatMonthDay(date), size=26*dateScale, lineHeight=1.2f, weight=FontWeight.ExtraBold, letterSpacing=-.52f)
+                KomaText(" 周${weekdayLabel(date)}", size=26*dateScale, lineHeight=1.2f, weight=FontWeight.Bold, color=c.ink5, letterSpacing=-.52f)
             }
         }
         FlowRow(Modifier.padding(top=8.dp).graphicsLayer {
