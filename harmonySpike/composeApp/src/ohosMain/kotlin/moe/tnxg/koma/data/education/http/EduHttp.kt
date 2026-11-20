@@ -17,6 +17,7 @@ import io.ktor.http.ParametersBuilder
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
+import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.contentType
 import io.ktor.http.decodeURLPart
 import io.ktor.http.encodeURLParameter
@@ -30,7 +31,8 @@ internal fun nowMillis(): Long = kotlinx.datetime.Clock.System.now().toEpochMill
 
 internal data class HttpResult(val status: Int, val url: Url, val headers: Map<String, String>, val bytes: ByteArray) {
     val text: String get() = bytes.decodeToString()
-    operator fun get(name: String): String? = headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
+    operator fun get(name: String): String? =
+        headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
 }
 
 /** Carries the rejected response so the login layer can show the server's own reason. */
@@ -65,18 +67,21 @@ internal class EduHttp(private val client: HttpClient) {
             method = if (body != null) HttpMethod.Post else HttpMethod.Get
             headers.forEach { (key, value) -> this@request.header(key, value) }
             if (body != null) {
-                when (body) {
-                    is EduBody.Form -> {
-                        setBody(body.fields.joinToString("&") { (k, v) ->
-                            k.encodeURLParameter() + "=" + v.encodeURLParameter()
-                        })
-                        contentType(ContentType.Application.FormUrlEncoded)
+                val encoded: String
+                val type: ContentType
+                if (body is EduBody.Form) {
+                    encoded = body.fields.joinToString("&") { (k, v) ->
+                        k.encodeURLParameter() + "=" + v.encodeURLParameter()
                     }
-                    is EduBody.Raw -> {
-                        setBody(body.text)
-                        contentType(ContentType.parse(body.contentType))
-                    }
+                    type = ContentType.Application.FormUrlEncoded
+                } else {
+                    body as EduBody.Raw
+                    encoded = body.text
+                    type = ContentType.parse(body.contentType)
                 }
+                val bytes = encoded.encodeToByteArray()
+                // ByteArrayContent 固定 Content-Length；String 体在 curl 引擎下可能退化为 chunked。
+                setBody(ByteArrayContent(bytes, type))
             }
         }
         val status = response.status.value
@@ -104,7 +109,7 @@ internal class EduHttp(private val client: HttpClient) {
             val destination = resolve(result.url, location) ?: throw EduIoException("登录跳转地址无效")
             if (destination.protocol != URLProtocol.HTTPS) throw EduIoException("登录只允许安全连接")
             val sameOrigin = result.url.protocol == destination.protocol && result.url.host == destination.host &&
-                result.url.port == destination.port
+                    result.url.port == destination.port
             // 307/308 preserve the method and payload. Never replay a credential-bearing
             // payload on another origin; silently changing it to GET is not equivalent.
             if (!sameOrigin && nextBody != null && result.status in 307..308) {
@@ -116,7 +121,7 @@ internal class EduHttp(private val client: HttpClient) {
                 nextBody = null
                 nextHeaders = nextHeaders.filterKeys { name ->
                     !name.equals("Content-Type", true) && !name.equals("Content-Length", true) &&
-                        !name.equals("Transfer-Encoding", true)
+                            !name.equals("Transfer-Encoding", true)
                 }
             }
             // Headers are caller-supplied and can contain credentials under any name.
@@ -130,7 +135,8 @@ internal class EduHttp(private val client: HttpClient) {
     companion object {
         private const val MAX_REDIRECTS = 16
         private val REDIRECT_STATUSES = setOf(301, 302, 303, 307, 308)
-        private const val USER_AGENT = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
+        private const val USER_AGENT =
+            "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
 
         fun client(vault: CookieVault): HttpClient = HttpClient(Curl) {
             followRedirects = false

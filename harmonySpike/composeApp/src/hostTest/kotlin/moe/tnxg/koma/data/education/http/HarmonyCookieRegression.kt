@@ -2,6 +2,7 @@ package moe.tnxg.koma.data.education.http
 
 import io.ktor.http.Url
 import io.ktor.http.parseServerSetCookieHeader
+import io.ktor.http.renderCookieHeader
 import kotlinx.coroutines.runBlocking
 
 /** Compile with the real ohosMain CookieVault.kt and Ktor, using no persistence. */
@@ -38,6 +39,17 @@ fun main() = runBlocking {
     expect(cas, listOf("route", "iPlanetDirectoryProCAS"))
     vault.clear()
     expect(cas, emptyList())
+    expect(jw, emptyList())
+
+    // CAS binds the RSA key to this opaque cookie. Escaping '%' again changes the token.
+    val publicKey = Url("https://qyrz.xjvut.edu.cn/cas/v1/getPubKey")
+    vault.addCookie(publicKey, parseServerSetCookieHeader(
+        "_pv0CAS=fixture%2Bkey%2Ftoken%3D; Domain=qyrz.xjvut.edu.cn; Path=/; SameSite=Lax; HttpOnly",
+    ))
+    check(renderCookieHeader(vault.get(cas).single()) == "_pv0CAS=fixture%2Bkey%2Ftoken%3D") {
+        "Harmony changed the CAS public-key cookie on the wire"
+    }
+    assertions++
     expect(jw, emptyList())
     println("Harmony cookie regression: $assertions assertions passed")
 }

@@ -3,6 +3,7 @@ package moe.tnxg.koma.data.education.http
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import io.ktor.http.Cookie
+import io.ktor.http.CookieEncoding
 import io.ktor.client.plugins.cookies.CookiesStorage
 import io.ktor.http.Url
 import kotlinx.serialization.Serializable
@@ -20,11 +21,14 @@ internal class CookieVault(private val path: String? = OhosPaths.filesDir?.plus(
     private data class StoredCookie(
         val name: String, val value: String, val domain: String, val path: String,
         val expiresAt: Long, val secure: Boolean, val httpOnly: Boolean, val hostOnly: Boolean,
+        // Older records contain the raw values received from CAS and JW.
+        val encoding: CookieEncoding = CookieEncoding.RAW,
     )
 
     private class VaultCookie(
         val name: String, val value: String, val domain: String, val path: String,
         val expiresAt: Long, val secure: Boolean, val httpOnly: Boolean, val hostOnly: Boolean,
+        val encoding: CookieEncoding,
     )
 
     private val cookies = mutableListOf<VaultCookie>()
@@ -48,8 +52,8 @@ internal class CookieVault(private val path: String? = OhosPaths.filesDir?.plus(
         val cookiePath = cookie.path.ifEmpty { "/" }
         val pathOk = if (cookiePath == "/") true
         else requestPath.startsWith(cookiePath) &&
-            (cookiePath.endsWith("/") || requestPath.getOrNull(cookiePath.length) == '/' ||
-                requestPath.length == cookiePath.length)
+                (cookiePath.endsWith("/") || requestPath.getOrNull(cookiePath.length) == '/' ||
+                        requestPath.length == cookiePath.length)
         return pathOk
     }
 
@@ -75,6 +79,7 @@ internal class CookieVault(private val path: String? = OhosPaths.filesDir?.plus(
                 cookies += VaultCookie(
                     cookie.name, cookie.value, domain, cookie.path.orEmpty().ifEmpty { "/" },
                     expiresAt, cookie.secure, cookie.httpOnly, cookie.domain == null,
+                    cookie.encoding,
                 )
             }
             persist()
@@ -90,6 +95,8 @@ internal class CookieVault(private val path: String? = OhosPaths.filesDir?.plus(
             .map {
                 Cookie(
                     name = it.name, value = it.value,
+                    // CAS already percent-encodes _pv0CAS; Ktor's URI default would escape it again.
+                    encoding = it.encoding,
                     domain = it.domain, path = it.path,
                     secure = it.secure, httpOnly = it.httpOnly,
                 )
@@ -97,7 +104,8 @@ internal class CookieVault(private val path: String? = OhosPaths.filesDir?.plus(
     }
 
     suspend fun clear() = mutex.withLock {
-        cookies.clear(); persist()
+        cookies.clear()
+        persist()
     }
 
     private fun load(file: String) {
@@ -111,6 +119,7 @@ internal class CookieVault(private val path: String? = OhosPaths.filesDir?.plus(
                 else VaultCookie(
                     entry.name, entry.value, entry.domain, entry.path,
                     entry.expiresAt, entry.secure, entry.httpOnly, entry.hostOnly,
+                    entry.encoding,
                 )
             }
         } catch (_: Exception) {
@@ -122,7 +131,17 @@ internal class CookieVault(private val path: String? = OhosPaths.filesDir?.plus(
     private fun persist() {
         val file = path ?: return
         val values = cookies.filter { it.expiresAt > nowMillis() }.map {
-            StoredCookie(it.name, it.value, it.domain, it.path, it.expiresAt, it.secure, it.httpOnly, it.hostOnly)
+            StoredCookie(
+                it.name,
+                it.value,
+                it.domain,
+                it.path,
+                it.expiresAt,
+                it.secure,
+                it.httpOnly,
+                it.hostOnly,
+                it.encoding
+            )
         }
         if (values.isEmpty()) {
             OhosPaths.delete(file)

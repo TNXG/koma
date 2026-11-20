@@ -15,6 +15,7 @@ import moe.tnxg.koma.data.education.http.*
 
 internal class LoginSession(private val http: EduHttp, private val vault: CookieVault) {
     private data class PublicKey(val execution: String, val modulus: String, val exponent: String)
+
     private var key: PublicKey? = null
     var ready: Boolean = false
         private set
@@ -44,7 +45,13 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
             val page = http.follow(Endpoints.LOGIN)
             key = loadPublicKey(page.text)
             val status = http.call("${Endpoints.CAS}/cas/getKaptchaStatus")
-            return LoginPreparation.Form(if (status.text.contains("true", ignoreCase = true)) refreshCaptcha() else null)
+            return LoginPreparation.Form(
+                if (status.text.contains(
+                        "true",
+                        ignoreCase = true
+                    )
+                ) refreshCaptcha() else null
+            )
         } catch (error: EduHttpException) {
             throw IoException(explain(error), error)
         }
@@ -52,10 +59,19 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
 
     private suspend fun loadPublicKey(html: String): PublicKey {
         val execution = extractExecution(html) ?: throw IoException("登录页没有就绪")
-        val response = http.call("${Endpoints.CAS}/cas/v1/getPubKey",
+        return fetchKey(execution)
+    }
+
+    /** 与 cas.js 相同的公钥端点；服务端每次调用都会轮换密钥对。 */
+    private suspend fun fetchKey(execution: String): PublicKey {
+        val response = http.call(
+            "${Endpoints.CAS}/cas/v1/getPubKey",
             EduBody.Raw("{}", "application/json"),
-            mapOf("X-Requested-With" to "XMLHttpRequest"))
-        val public = try { Json.parseToJsonElement(response.text).jsonObject } catch (_: IllegalArgumentException) {
+            mapOf("X-Requested-With" to "XMLHttpRequest")
+        )
+        val public = try {
+            Json.parseToJsonElement(response.text).jsonObject
+        } catch (_: IllegalArgumentException) {
             throw IoException("拿不到登录公钥")
         }
         val modulus = (public["modulus"] as? JsonPrimitive)?.contentOrNull?.takeIf(String::isNotBlank)
@@ -65,7 +81,6 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
     }
 
     suspend fun refreshCaptcha(): String {
-        if (key == null) throw IoException("登录还没准备好")
         val image = http.call("${Endpoints.CAS}/cas/kaptcha?time=${nowMillis()}")
         if (image.bytes.isEmpty()) throw IoException("拿不到验证码")
         val type = image["Content-Type"]?.substringBefore(';')?.trim() ?: "image/png"
@@ -75,29 +90,29 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
 
     suspend fun login(username: String, password: String, captcha: String): LoginResult {
         val public = key ?: return LoginResult(false, "请先开始登录")
-        println("KomaEdu login-submit endpoint=/cas/login modulusBits=${BigInt.fromHex(public.modulus).bitLength()} exponentLength=${public.exponent.length}")
-        val body = EduBody.Form(listOf(
+        val fields = listOf(
             "username" to username,
             "password" to encryptCasPassword(password, public.modulus, public.exponent),
             "code" to "", "authcode" to captcha, "execution" to public.execution,
             "_eventId" to "submit", "type" to "zhmm",
-        ))
+        )
+        val body = EduBody.Form(fields)
         key = null
         val response = try {
             http.call(Endpoints.LOGIN, body, mapOf("Referer" to Endpoints.LOGIN))
         } catch (error: EduHttpException) {
-            reportLoginResponse(error.status, error.body)
             // CAS also renders form failures with HTTP 401; retain its execution and captcha classification.
             ready = false
             key = try {
                 val page = error.body.takeIf { extractExecution(it) != null } ?: http.call(Endpoints.LOGIN).text
                 loadPublicKey(page)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                null
             }
-            catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) { null }
             return LoginResult(false, explain(error), isCaptchaError(error.body))
         }
-        reportLoginResponse(response.status, response.text)
         if (extractExecution(response.text) != null) {
             val raw = casErrorText(response.text)
             ready = false
@@ -109,20 +124,6 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
             return LoginResult(false, "教务登录没接上，请重试")
         }
         return LoginResult(true)
-    }
-
-    // Temporary boundary diagnostics: only public key dimensions and a fixed
-    // error category. Never print response text, submitted fields or cookies.
-    private fun reportLoginResponse(status: Int, html: String) {
-        val reason = casErrorText(html)
-        val category = when {
-            isCaptchaError(reason) -> "captcha"
-            reason.contains("not recognized", ignoreCase = true) -> "account"
-            Regex("flow|execution", RegexOption.IGNORE_CASE).containsMatchIn(reason) -> "session"
-            reason.isEmpty() -> "none"
-            else -> "other"
-        }
-        println("KomaEdu login-response endpoint=/cas/login status=$status error=$category")
     }
 
     /** Prefer the reason the auth server rendered; fall back to what the status itself means. */
@@ -139,6 +140,11 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
         }
     }
 
-    fun invalidate() { ready = false; key = null }
-    suspend fun reset() { invalidate(); vault.clear() }
+    fun invalidate() {
+        ready = false; key = null
+    }
+
+    suspend fun reset() {
+        invalidate(); vault.clear()
+    }
 }
