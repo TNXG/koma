@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/screenshots/icon.png" width="88" alt="Koma Pro">
+  <img src="docs/screenshots/icon.svg" width="88" alt="Koma">
 </p>
 
 <h1 align="center">Koma Pro</h1>
