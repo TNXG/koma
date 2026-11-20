@@ -42,8 +42,8 @@ import moe.tnxg.koma.ui.component.media.downloadCoverBytes
 import moe.tnxg.koma.ui.component.page.SubpageScaffold
 import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.theme.KomaTheme
+import moe.tnxg.koma.version.APP_VERSION
 
-const val APP_VERSION = "0.0.1"
 const val PROJECT_URL = "https://github.com/tnxg/koma"
 private const val PROJECT_PATH = "tnxg/koma"
 private const val GITCODE_URL = "https://gitcode.com/gxdev_lab/koma"

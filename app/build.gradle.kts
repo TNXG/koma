@@ -5,8 +5,9 @@ plugins {
     kotlin("plugin.compose")
 }
 
-// 版本号同时用于 APK 文件名，保持单一来源。
-val komaVersionName = "0.0.2"
+// 版本号同时用于 APK 文件名，唯一来源是 gradle.properties 的 koma.version。
+val komaVersionName: String = providers.gradleProperty("koma.version").orNull
+    ?: error("gradle.properties 缺少 koma.version")
 
 // 发布签名口令来源：环境变量优先，其次未跟踪的 gradle.properties。
 val releaseSecret: (String) -> String? = { name ->
