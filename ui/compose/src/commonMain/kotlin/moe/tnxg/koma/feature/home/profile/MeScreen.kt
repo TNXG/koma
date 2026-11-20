@@ -198,7 +198,7 @@ fun MeScreen(
                         formattedStart = formattedStart,
                     )
                     else SettingsGroup {
-                        SettingsNavRow("尚未导入课表", value = "登录或导入 JSON", onClick = onSemester)
+                        SettingsNavRow("尚未导入课表", value = "登录教务或导入离线课表", onClick = onSemester)
                     }
 
                     SettingsGroup(modifier = Modifier.padding(top = 16.dp)) {
@@ -208,7 +208,7 @@ fun MeScreen(
                         SettingsDivider(indent = true)
                         SettingsNavRow(title = "设置", glyph = KomaGlyph.Settings, onClick = onSettings)
                         SettingsDivider(indent = true)
-                        SettingsNavRow(title = "关于 Koma", glyph = KomaGlyph.Book, onClick = onAbout)
+                        SettingsNavRow(title = "关于", glyph = KomaGlyph.Book, onClick = onAbout)
                     }
                 }
             }

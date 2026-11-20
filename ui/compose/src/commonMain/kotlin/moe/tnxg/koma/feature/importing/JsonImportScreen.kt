@@ -112,7 +112,7 @@ fun JsonImportScreen(onBack: () -> Unit, onImport: (TimetableSnapshot) -> Unit) 
     }
 
     SubpageScaffold(
-        title = "导入课表",
+        title = "导入离线课表",
         onBack = { if (preview != null) preview = null else onBack() },
     ) {
         AnimatedContent(

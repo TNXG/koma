@@ -51,9 +51,9 @@ fun SemesterScreen(semester: Semester, confirmedDate: String, onConfirm: (String
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
             .padding(start = 20.dp, end = 20.dp, top = 34.dp)) {
-            KomaText("校历与开学时间", size = 26, weight = FontWeight.ExtraBold, letterSpacing = -.52f, lineHeight = 1.2f)
+            KomaText("开学时间", size = 26, weight = FontWeight.ExtraBold, letterSpacing = -.52f, lineHeight = 1.2f)
             Spacer(Modifier.height(6.dp))
-            KomaText("设置第 1 周周一日期，用于准确推算学期周次及每日课程", size = 12.5f, weight = FontWeight.Medium, color = colors.ink4)
+            KomaText("确认第 1 周周一日期，用于计算教学周次与每日排课", size = 12.5f, weight = FontWeight.Medium, color = colors.ink4)
             Spacer(Modifier.height(22.dp))
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(colors.surface)) {
                 SemesterRow("开学首周", Modifier.clickable(remember { MutableInteractionSource() }, null) { calendar = true },

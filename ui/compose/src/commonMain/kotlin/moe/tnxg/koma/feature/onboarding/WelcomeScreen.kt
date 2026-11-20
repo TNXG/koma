@@ -32,9 +32,9 @@ import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.theme.KomaTheme
 
 private val features = listOf(
-    KomaGlyph.Calendar to "今日日程，清晰直观",
-    KomaGlyph.Location to "教室节次，一目了然",
-    KomaGlyph.Refresh to "本地存储，离线随时查阅",
+    KomaGlyph.Calendar to "今日时间线，一眼看清",
+    KomaGlyph.Location to "整周排课表，一屏尽览",
+    KomaGlyph.Refresh to "存放在本机，离线可查",
 )
 
 @Composable
@@ -45,14 +45,14 @@ fun WelcomeScreen(onStart: () -> Unit, onSkip: () -> Unit, onJsonImport: () -> U
         Column(Modifier.widthIn(max = 430.dp).fillMaxSize()) {
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp, vertical = 48.dp)) {
-                Image(KomaAppIcon, "Koma Pro",
+                Image(KomaAppIcon, "Koma",
                     Modifier.size(84.dp).shadow(14.dp, iconShape, ambientColor = colors.accent,
                         spotColor = colors.accent).clip(iconShape).border(1.dp, colors.line2, iconShape))
                 Spacer(Modifier.height(40.dp))
                 KomaText("欢迎使用 Koma", size = 30, weight = FontWeight.ExtraBold,
                     letterSpacing = -.6f, lineHeight = 1.25f)
                 Spacer(Modifier.height(10.dp))
-                KomaText("绑定教务系统导入课表，轻松掌握学期日程。", size = 14, color = colors.ink2)
+                KomaText("连接教务或导入课表，每天上什么课一目了然。", size = 14, color = colors.ink2)
                 Spacer(Modifier.height(36.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                     features.forEach { (glyph, text) ->

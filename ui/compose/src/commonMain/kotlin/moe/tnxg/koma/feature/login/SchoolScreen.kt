@@ -65,12 +65,12 @@ fun SchoolScreen(onSelect: () -> Unit, onBack: () -> Unit) {
             Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 34.dp)) {
                 KomaTextButton("返回", onBack, Modifier.padding(vertical = 12.dp))
                 KomaText(
-                    "登录哪所学校？", size = 26, weight = FontWeight.ExtraBold,
+                    "选择学校", size = 26, weight = FontWeight.ExtraBold,
                     letterSpacing = -.52f, lineHeight = 1.2f
                 )
                 Spacer(Modifier.height(6.dp))
                 KomaText(
-                    "选择学校后，使用该校学号和统一身份认证密码登录", size = 12.5f,
+                    "使用学号与统一身份认证密码登录教务", size = 12.5f,
                     weight = FontWeight.Medium, color = colors.ink3
                 )
                 Spacer(Modifier.height(20.dp))

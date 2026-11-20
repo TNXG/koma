@@ -85,10 +85,10 @@ fun EmptyHomeScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)) {
                             KomaText("还没有课表", size = 22, weight = FontWeight.Bold)
-                            KomaText("无需登录也能使用。导入课表后，这里会显示你的课程。",
+                            KomaText("登录教务或导入离线课表后，这里会显示你的课程。",
                                 size = 13, color = colors.ink3)
-                            KomaButton("导入课表", onJsonImport)
-                            KomaTextButton("登录学校教务导入", onLogin, Modifier.padding(12.dp))
+                            KomaButton("导入离线课表", onJsonImport)
+                            KomaTextButton("登录教务导入", onLogin, Modifier.padding(12.dp))
                         }
                     }
                 }

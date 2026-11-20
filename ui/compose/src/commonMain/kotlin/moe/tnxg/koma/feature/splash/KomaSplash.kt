@@ -100,7 +100,7 @@ private fun SplashSurface(
         ) {
             SplashMark(reveals, Modifier.size(84.dp))
             Spacer(Modifier.height(24.dp))
-            KomaText("Koma Pro", size = 17, weight = FontWeight.Bold, letterSpacing = -.2f)
+            KomaText("Koma", size = 17, weight = FontWeight.Bold, letterSpacing = -.2f)
             Spacer(Modifier.height(20.dp))
             if (error == null) {
                 LoadingRail(reduceMotion)

@@ -61,8 +61,8 @@ fun AccountScreen(
             )
             SettingsDivider()
             SettingsNavRow(
-                title = "导入课表",
-                value = "文件、粘贴或 AI 识图",
+                title = "导入离线课表",
+                value = "JSON 文件、粘贴或 AI 识图",
                 onClick = app::openJsonImport,
             )
             if (app.hasSchoolAccount) {

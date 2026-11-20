@@ -17,10 +17,10 @@ object NotificationChannels {
             return
         val channel = NotificationChannel(
             CLASS_REMINDERS,
-            "上课提醒",
+            "课前提醒",
             NotificationManager.IMPORTANCE_HIGH,
         ).apply {
-            description = "课表与上课提醒"
+            description = "课表与课前提醒"
         }
         manager.createNotificationChannel(channel)
     }

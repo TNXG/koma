@@ -76,7 +76,7 @@ internal fun CourseDrawerDetails(course: Course, courses: List<Course>, date: Lo
     }
     Spacer(Modifier.height(12.dp))
     DetailTile(DetailIcon.Info,
-        if (suspended) "第 $week 周已设为停课，不再提醒上课。" else "手动调课优先保留；同步发生变动时支持冲突对照。",
+        if (suspended) "第 $week 周已停课，不发送课前提醒。" else "手动修改存放在本机；同步教务课表时优先保留。",
         notice = true)
     if (others.isNotEmpty()) {
         Spacer(Modifier.height(12.dp))
