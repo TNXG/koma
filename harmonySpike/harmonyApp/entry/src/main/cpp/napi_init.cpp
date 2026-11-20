@@ -3,6 +3,7 @@
 #include "hilog/log.h"
 #include <rawfile/raw_file_manager.h>
 #include <dlfcn.h>
+#include <vector>
 
 // 避免工程侧未定义 LOG_DOMAIN 时编译失败
 #ifndef LOG_DOMAIN
@@ -10,7 +11,57 @@
 #endif
 
 static napi_value MainArkUIViewController(napi_env env, napi_callback_info info) {
-    return reinterpret_cast<napi_value>(MainArkUIViewController(env));
+    size_t argc = 2;
+    napi_value arguments[2] = {};
+    if (napi_get_cb_info(env, info, &argc, arguments, nullptr, nullptr) != napi_ok || argc != 2) {
+        napi_throw_type_error(env, nullptr, "filesDir and captcha recognizer are required");
+        return nullptr;
+    }
+    size_t length = 0;
+    napi_valuetype type;
+    if (napi_typeof(env, arguments[1], &type) != napi_ok || type != napi_function) {
+        napi_throw_type_error(env, nullptr, "captcha recognizer must be a function");
+        return nullptr;
+    }
+    if (napi_get_value_string_utf8(env, arguments[0], nullptr, 0, &length) != napi_ok || length == 0) {
+        napi_throw_type_error(env, nullptr, "filesDir must be a nonempty string");
+        return nullptr;
+    }
+    std::vector<char> path(length + 1);
+    if (napi_get_value_string_utf8(env, arguments[0], path.data(), path.size(), &length) != napi_ok ||
+        path[0] != '/') {
+        napi_throw_type_error(env, nullptr, "filesDir must be an absolute path");
+        return nullptr;
+    }
+    return reinterpret_cast<napi_value>(MainArkUIViewController(env, path.data(), arguments[1]));
+}
+
+static napi_value CompleteCaptcha(napi_env env, napi_callback_info info) {
+    size_t argc = 2;
+    napi_value arguments[2] = {};
+    int32_t id;
+    size_t length = 0;
+    if (napi_get_cb_info(env, info, &argc, arguments, nullptr, nullptr) != napi_ok || argc != 2 ||
+        napi_get_value_int32(env, arguments[0], &id) != napi_ok ||
+        napi_get_value_string_utf8(env, arguments[1], nullptr, 0, &length) != napi_ok) {
+        napi_throw_type_error(env, nullptr, "captcha id and text are required");
+        return nullptr;
+    }
+    std::vector<char> text(length + 1);
+    if (napi_get_value_string_utf8(env, arguments[1], text.data(), text.size(), &length) != napi_ok) {
+        return nullptr;
+    }
+    KomaCompleteCaptcha(id, text.data());
+    napi_value result;
+    napi_get_undefined(env, &result);
+    return result;
+}
+
+static napi_value ReleaseCaptcha(napi_env env, napi_callback_info info) {
+    KomaReleaseCaptcha();
+    napi_value result;
+    napi_get_undefined(env, &result);
+    return result;
 }
 
 EXTERN_C_START
@@ -18,6 +69,8 @@ static napi_value Init(napi_env env, napi_value exports) {
     androidx_compose_ui_arkui_init(env, exports);
     napi_property_descriptor desc[] = {
         {"MainArkUIViewController", nullptr, MainArkUIViewController, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"completeCaptcha", nullptr, CompleteCaptcha, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"releaseCaptcha", nullptr, ReleaseCaptcha, nullptr, nullptr, nullptr, napi_default, nullptr},
     };
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;

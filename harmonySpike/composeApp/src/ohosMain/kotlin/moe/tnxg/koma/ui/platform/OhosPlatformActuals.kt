@@ -3,19 +3,41 @@
 package moe.tnxg.koma.ui.platform
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
+import androidx.compose.ui.platform.LocalArkUIViewController
 import androidx.compose.ui.unit.Dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 
 @Composable
 actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {
-    BackHandler(enabled, onBack)
+    val controller = LocalArkUIViewController.current
+    val currentEnabled by rememberUpdatedState(enabled)
+    val currentOnBack by rememberUpdatedState(onBack)
+    DisposableEffect(controller) {
+        // Keep composition order stable when enabled changes: sheets/profile beat route handlers.
+        val cancel = controller.onBackPressedDispatcher.addOnBackPressedCallback {
+            if (currentEnabled && controller.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                currentOnBack()
+                true
+            } else {
+                false
+            }
+        }
+        onDispose { cancel() }
+    }
 }
 
 @Composable
 actual fun PlatformForeground(onForeground: () -> Unit) {
-    // M1：前台回调降级为 no-op（ArkUIViewController 生命周期桥接待后续里程碑接入）
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { } }
+    LifecycleEventEffect(
+        event = Lifecycle.Event.ON_RESUME,
+        lifecycleOwner = LocalArkUIViewController.current,
+        onEvent = onForeground,
+    )
 }
 
 @Composable

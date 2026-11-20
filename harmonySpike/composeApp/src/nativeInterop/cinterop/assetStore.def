@@ -1,0 +1,4 @@
+headers = asset/asset_api.h
+headerFilter = asset/**
+package = moe.tnxg.koma.assetstore
+linkerOpts = -lasset_ndk.z

@@ -6,7 +6,7 @@ plugins {
 
 // OHOS spike: 仅在 -PenableOhos 时注册鸿蒙 target（正常 Android 构建不受影响）
 // ohosArm64() 是 fork KGP 才有的 API，拆到独立脚本避免官方工具链下编译失败
-val ohosEnabled = providers.gradleProperty("enableOhos").isPresent
+val ohosEnabled = providers.gradleProperty("enableOhos").orNull == "true"
 if (ohosEnabled) {
     apply(from = "ohos-target.gradle")
 }

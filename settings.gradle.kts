@@ -1,6 +1,12 @@
 pluginManagement {
     // pluginManagement 是先行编译的独立作用域，属性必须在此处读取
-    val kotlinOhosVersion = providers.gradleProperty("kotlinOhosVersion").orNull
+    // 只有 enableOhos=true 才切到 fork 工具链；写在 gradle.properties 里的 false 不能算启用
+    val kotlinOhosVersion =
+        if (providers.gradleProperty("enableOhos").orNull == "true") {
+            providers.gradleProperty("kotlinOhosVersion").orNull
+        } else {
+            null
+        }
     repositories {
         google()
         mavenCentral()

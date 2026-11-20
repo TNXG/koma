@@ -2,7 +2,13 @@
   "modelVersion": "6.0.0",
   "description": "Please describe the basic information.",
   "dependencies": {
-    "@cpf-kmp-cmp/compose": "1.9.2-1.2.0"
+    "@cpf-kmp-cmp/compose": "1.9.2-1.2.0",
+    "@ohos/onnxruntime": "1.0.0"
+  },
+  // onnxruntime 1.0.0 ships native code built against this AKI ABI.
+  // AKI 1.3.3 enlarges Persistent/ArrayBuffer and corrupts its callers' stacks.
+  "overrides": {
+    "@ohos/aki": "1.2.26"
   },
   "devDependencies": {
     "@ohos/hypium": "1.0.24",

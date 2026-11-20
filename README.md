@@ -25,7 +25,7 @@
 
 ## 安装
 
-当前版本 0.0.1，包名 `moe.tnxg.koma`，只支持 Android 10 及以上系统。
+当前版本 0.0.1，Android 安装包支持 Android 10 及以上系统，包名 `moe.tnxg.koma`。HarmonyOS 实验工程位于 `harmonySpike/`，构建方式见[开发说明](docs/DEVELOPMENT.md#harmonyosharmonyspike)。
 
 没有上架应用商店。打 `v*` 标签后 CI 自动构建并发布 Release，每个版本提供 `arm64-v8a`、`armeabi-v7a`、`x86`、`x86_64` 四个分包和覆盖全部架构的 `universal` 包：按手机架构选分包体积最小，不确定就装 `universal`。手里有 APK 就直接传到手机安装；没有的话，按下面的「自己打包」自己编译。
 
@@ -35,6 +35,8 @@
 2. 教务登录需要学号、教务密码和验证码。验证码在本机自动识别，也可手动输入；登录后抓取整学期课表，确认开学日期即可使用。
 3. 不登录时可浏览空课表、个人资料和设置，之后随时导入。选择会保存在本机，下次启动无需再次跳过登录。
 4. 课表保存在本机，断网也能看。「我的 → 教务账号」可再次登录或导入 JSON；开学日期可在「学期与课表」里修改。
+
+开启「保存密码」后，需要重新登录时会自动填入账号密码并识别验证码；连续识别失败后可手动输入。关闭保存密码并成功登录会删除旧凭据，退出登录也会清除保存的账号密码。
 
 ### JSON 导入与 AI 识图
 
@@ -89,7 +91,7 @@
 
 ## 隐私
 
-课表保存在本机，账号凭据用 Android Keystore 加密保存在本机，验证码在本机识别。
+课表保存在本机。保存的账号凭据在 Android 上使用 Keystore 加密，在 HarmonyOS 上使用系统 Asset Store 加密、仅设备解锁时可访问且不跨设备同步。两端验证码均在本机使用 ONNX 模型识别，HarmonyOS 使用 [@ohos/onnxruntime](https://gitcode.com/OpenHarmony-ApplicationTPC/ohos_onnxruntime)，图片不上传至识别服务。
 
 没有广告，没有第三方统计。
 

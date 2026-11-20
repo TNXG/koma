@@ -3,6 +3,7 @@ package moe.tnxg.koma.data.education.http
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.curl.Curl
 import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.request.header
 import io.ktor.client.request.request
@@ -134,6 +135,8 @@ internal class EduHttp(private val client: HttpClient) {
         fun client(vault: CookieVault): HttpClient = HttpClient(Curl) {
             followRedirects = false
             expectSuccess = false
+            // curl 引擎不带默认 UA；CAS/WAF 对无 UA 请求直接 500，Android 端每请求都带同一 UA。
+            install(UserAgent) { agent = USER_AGENT }
             install(HttpCookies) { storage = vault }
             install(HttpTimeout) {
                 connectTimeoutMillis = 15_000

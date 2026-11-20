@@ -114,6 +114,7 @@ class AppController(
             LoginPreparation.Ready -> importTimetable()
             is LoginPreparation.Form -> {
                 captcha = result.captcha
+                captchaInput = ""
                 manualCaptcha = false
                 phase = LoginPhase.Form
                 val saved = if (platform.canRememberCredentials) platform.loadCredentials() else null

@@ -60,7 +60,6 @@ mise run run
 
 - JDK、Gradle 由 mise 固定，不依赖机器上的绝对工具路径。
 - Android SDK 安装在被忽略的 `.tools/android/`，SDK 环境由 mise 配置。
-- `mise run setup` 装 API 37、Build Tools 和 OCR 模型（按 SHA-256 校验）。
 - 三个平台同一套命令：`mise run setup`、`mise run check`、`mise run run`、`mise run install-release` 通过 mise 的 `run_windows` 分派到 `tools/*.ps1`，其余平台走 `tools/*.sh`。Windows 用系统自带的 PowerShell 5.1，不依赖 WSL、Git Bash 或额外安装的 `unzip`。
 - `tools/setup.sh` 按 `uname -s` 选 `commandlinetools-mac-*` / `commandlinetools-linux-*`；OCR 模型统一由 `tools/fetch-ocr-model.sh` 拉取并校验，哈希检查优先 `sha256sum`，macOS 回退到 `shasum -a 256`。
 - 结构规则（350 行上限、文件名不含连字符）在 `tools/check-structure.sh` 与 `tools/check.ps1` 各有一份实现，两者都按物理行数计，改规则时同时改两处。
@@ -71,6 +70,32 @@ mise run run
 - 单独检查：`mise run check`。
 - 设备测试：`mise exec -- gradle :core:connectedAndroidDeviceTest`。
 - 验证码 OCR 使用 ONNX Runtime Android 1.32.0；该版本默认开启微软 1DS 遥测，应用在 `KomaApplication.onCreate` 里先设置 `ORT_DISABLE_TELEMETRY=1`，`OcrEngine` 再用 `setTelemetry(false)` 兜底，并在 manifest 合并时移除 `ai.onnxruntime.TelemetryInitializer` 与它带入的 `ACCESS_NETWORK_STATE`。升级后可单独运行模型设备测试：`mise exec -- gradle :core:connectedAndroidDeviceTest -Pandroid.testInstrumentationRunnerArguments.class=moe.tnxg.koma.ocr.OcrModelInstrumentedTest`，覆盖原图与裁切视图的实际推理。
+
+### HarmonyOS（harmonySpike）
+
+`harmonySpike/` 是独立的鸿蒙实验工程：Gradle 侧用 Kotlin 2.2.21-1.2.0（OHOS fork，eazytec Maven）把共享 Compose UI 编成 `libkn.so`，hvigor 侧用壳工程 `harmonyApp/` 打 HAP。与主 Android 工程互不影响。
+
+工具链用华为官方 Command Line Tools（内嵌 HarmonyOS SDK，26.0.0 / API 26 起，工程 `modelVersion 6.0.0` 至少需要 6.x 系列 CLT）：
+
+1. 从开发者官网下载中心取 `commandline-tools-linux-x64-<版本>.zip`（注意别下成 arm64 包），解压到 `.tools/ohos/`，得到 `.tools/ohos/command-line-tools/`。
+2. 执行 `mise run setup-harmony`：给 SDK 内所有 ELF 二进制补上可执行位、把 `clang`/`llvm-strip` 等文本别名文件转成符号链接、给 konan 的 `ld.lld` 链接 `libxml2.so.2`（Arch 只有 `.so.16`），并验证 `hvigorw`、`ohpm` 可运行。
+3. 构建：`mise run build-harmony` —— 先 `gradlew publishDebugBinariesToHarmonyApp` 产出 `libkn.so`/`libkn_api.h` 并发布进壳工程，再 `hvigorw assembleHap` 打包。
+4. 产物：`harmonySpike/harmonyApp/entry/build/default/outputs/default/entry-default-unsigned.hap`（未签名；签名需在 `build-profile.json5` 配 signingConfig）。
+
+注意：华为云镜像（`mirrors.huaweicloud.com/harmonyos/ohpm/`）只提供到 5.1.0 的 CLT，6.x 只在官网下载中心（需要带签名的临时直链）；官网下载页是 SPA，命令行拿不到稳定 URL。
+
+验证码 OCR 的 `@ohos/onnxruntime@1.0.0` 是预编译原生库；根 `oh-package.json5` 必须用 `overrides` 固定 `@ohos/aki@1.2.26`。其传递依赖 `^1.2.14` 会解析到 ABI 不兼容的 `1.3.3`：`Persistent` 从 8 字节增至 24 字节，导致 `ArrayBuffer` 复制覆盖 ONNX 调用方的栈，点击登录时在 `CreateSessionFromBufferWithOptions` 内闪退。也不能直接退回 `1.2.14`：它缺少预编译库使用的 `GetUInt`、`GetUInt64` 符号；`1.2.26` 保持旧布局且提供全部必需符号。升级这两项依赖必须成对核对原生 ABI 和符号，不能只看 semver 范围。
+
+真机 OCR 回归位于 `entry/src/ohosTest/ets/test/Captcha.test.ets`：使用无账号信息的固定 `1+8=?` 验证码张量，加载打包的 ONNX 模型并连续推理两次，校验真实识别结果，覆盖原生 ABI 和会话复用，不连接教务。在本地 `entry/build-profile.json5` 的 `targets` 中加入 `{"name":"ohosTest"}`，然后在 `harmonySpike/harmonyApp/` 执行：
+
+```sh
+ohpm install --all
+hvigorw assembleHap --mode module -p product=default -p module=entry@ohosTest -p buildMode=debug --no-daemon
+hdc install -r entry/build/default/outputs/ohosTest/entry-ohosTest-signed.hap
+hdc shell aa test -b moe.tnxg.koma -m entry_test -s unittest OpenHarmonyTestRunner -s class CaptchaModelTest -s timeout 30000 -w 45
+```
+
+需要有效的本地签名配置，设备必须解锁。闪退记录无需访问受限的 `/data/log/faultlog`：先运行 `hdc shell 'hidumper -s 1201 -a "-p Faultlogger -m moe.tnxg.koma"'` 获取文件名，再用 `-f <文件名>` 提取调用栈。
 
 ## 发布与 CI
 

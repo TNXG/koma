@@ -75,6 +75,7 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
 
     suspend fun login(username: String, password: String, captcha: String): LoginResult {
         val public = key ?: return LoginResult(false, "请先开始登录")
+        println("KomaEdu login-submit endpoint=/cas/login modulusBits=${BigInt.fromHex(public.modulus).bitLength()} exponentLength=${public.exponent.length}")
         val body = EduBody.Form(listOf(
             "username" to username,
             "password" to encryptCasPassword(password, public.modulus, public.exponent),
@@ -85,6 +86,7 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
         val response = try {
             http.call(Endpoints.LOGIN, body, mapOf("Referer" to Endpoints.LOGIN))
         } catch (error: EduHttpException) {
+            reportLoginResponse(error.status, error.body)
             // CAS also renders form failures with HTTP 401; retain its execution and captcha classification.
             ready = false
             key = try {
@@ -95,6 +97,7 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
             catch (_: Exception) { null }
             return LoginResult(false, explain(error), isCaptchaError(error.body))
         }
+        reportLoginResponse(response.status, response.text)
         if (extractExecution(response.text) != null) {
             val raw = casErrorText(response.text)
             ready = false
@@ -106,6 +109,20 @@ internal class LoginSession(private val http: EduHttp, private val vault: Cookie
             return LoginResult(false, "教务登录没接上，请重试")
         }
         return LoginResult(true)
+    }
+
+    // Temporary boundary diagnostics: only public key dimensions and a fixed
+    // error category. Never print response text, submitted fields or cookies.
+    private fun reportLoginResponse(status: Int, html: String) {
+        val reason = casErrorText(html)
+        val category = when {
+            isCaptchaError(reason) -> "captcha"
+            reason.contains("not recognized", ignoreCase = true) -> "account"
+            Regex("flow|execution", RegexOption.IGNORE_CASE).containsMatchIn(reason) -> "session"
+            reason.isEmpty() -> "none"
+            else -> "other"
+        }
+        println("KomaEdu login-response endpoint=/cas/login status=$status error=$category")
     }
 
     /** Prefer the reason the auth server rendered; fall back to what the status itself means. */

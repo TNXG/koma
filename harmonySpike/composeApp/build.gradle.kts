@@ -4,12 +4,18 @@ import java.net.URI
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
 }
 
 val repoRoot = rootProject.projectDir.parentFile
+
+val prepareOcrModel by tasks.registering(Exec::class) {
+    workingDir(repoRoot)
+    commandLine("bash", File(repoRoot, "tools/fetch-ocr-model.sh").absolutePath)
+}
 
 val miuixBase = layout.buildDirectory.dir("miuix-0.9.4")
 val miuixSrc = miuixBase.map { it.dir("src") }
@@ -54,10 +60,17 @@ kotlin {
     }
 
     ohosArm64 {
+        compilations.getByName("main").cinterops.create("assetStore") {
+            defFile(project.file("src/nativeInterop/cinterop/assetStore.def"))
+            val sdk = System.getenv("DEVECO_SDK_HOME")
+                ?: File(repoRoot, ".tools/ohos/command-line-tools/sdk").absolutePath
+            includeDirs("$sdk/default/openharmony/native/sysroot/usr/include")
+        }
         binaries.sharedLib {
             baseName = "kn"
             export(libs.compose.multiplatform.export)
             linkerOpts("-lz")
+            linkerOpts("-lasset_ndk.z")
             linkerOpts(
                 "-lnative_drawing",
                 "-limage_source",
@@ -154,6 +167,7 @@ arrayOf("debug" to "Debug").forEach { (type, cap) ->
     tasks.register<Copy>("publish${cap}BinariesToHarmonyApp") {
         group = "harmony"
         dependsOn("link${cap}SharedOhosArm64")
+        dependsOn(prepareOcrModel)
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
         into(rootProject.file("harmonyApp"))
         from("build/bin/ohosArm64/${type}Shared/libkn_api.h") {
@@ -164,6 +178,9 @@ arrayOf("debug" to "Debug").forEach { (type, cap) ->
         }
         from("${repoRoot.absolutePath}/ui/compose/src/commonMain/composeResources") {
             into("entry/src/main/resources/rawfile/composeResources/moe.tnxg.koma.resources/")
+        }
+        from("${repoRoot.absolutePath}/core/src/androidMain/assets/ocr") {
+            into("entry/src/main/resources/rawfile/ocr/")
         }
     }
 }

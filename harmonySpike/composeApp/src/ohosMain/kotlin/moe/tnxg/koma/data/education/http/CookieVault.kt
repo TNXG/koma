@@ -42,7 +42,9 @@ internal class CookieVault(private val path: String? = OhosPaths.filesDir?.plus(
         val domainOk = if (cookie.hostOnly) host == cookie.domain
         else host == cookie.domain || host.endsWith("." + cookie.domain.removePrefix("."))
         if (!domainOk) return false
-        val requestPath = "/" + url.pathSegments.joinToString("/")
+        // Ktor pathSegments includes a leading empty segment for absolute URLs.
+        // Prefixing it with "/" would turn /cas/login into //cas/login and drop SESSION.
+        val requestPath = url.encodedPath.ifEmpty { "/" }
         val cookiePath = cookie.path.ifEmpty { "/" }
         val pathOk = if (cookiePath == "/") true
         else requestPath.startsWith(cookiePath) &&
@@ -53,7 +55,7 @@ internal class CookieVault(private val path: String? = OhosPaths.filesDir?.plus(
 
     private fun allowed(host: String): Boolean = host == "qyrz.xjvut.edu.cn" || host == "jw.xjvut.edu.cn"
 
-    private fun nowMillis(): Long = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+    private fun nowMillis(): Long = kotlin.time.Clock.System.now().toEpochMilliseconds()
 
     override fun close() {}
 

@@ -9,6 +9,12 @@ ANDROID_SDK_ROOT = "{{config_root}}/.tools/android"
 # Keep SDK caches out of $HOME: sdkmanager and AGP both fail on non-ASCII home paths.
 ANDROID_USER_HOME = "{{config_root}}/.tools/android-user"
 
+# ---- HarmonyOS（harmonySpike 壳工程）----
+# Command Line Tools（hvigorw/ohpm + 内嵌 HarmonyOS SDK），下载解压后仅修可执行位
+HOS_CLT = "{{config_root}}/.tools/ohos/command-line-tools"
+DEVECO_SDK_HOME = "{{config_root}}/.tools/ohos/command-line-tools/sdk"
+DEVECO_NODE_HOME = "{{config_root}}/.tools/ohos/command-line-tools/tool/node"
+
 [tasks.setup]
 description = "Install the Android SDK and verified OCR model"
 run = "bash tools/setup.sh"
@@ -25,6 +31,20 @@ run = "gradle :app:assembleDebug"
 [tasks.build-release]
 description = "Build the release APK, signed with ~/android.p12"
 run = "gradle :app:assembleRelease"
+
+[tasks.setup-harmony]
+description = "Prepare the HarmonyOS command line tools (run after unzipping the official 26.0.0 x64 zip into .tools/ohos)"
+run = "bash tools/setup-harmony.sh"
+
+[tasks.build-harmony]
+description = "Build the HarmonyOS HAP: K/N shared lib via Gradle, then hvigor assembleHap"
+run = '''
+cd harmonySpike
+sh gradlew publishDebugBinariesToHarmonyApp --no-daemon
+cd harmonyApp
+export PATH="$HOS_CLT/bin:$PATH"
+hvigorw assembleHap --mode module -p product=default -p buildMode=debug --no-daemon
+'''
 
 [tasks.install-release]
 description = "Install the release APK on a connected device"

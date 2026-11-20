@@ -1,6 +1,7 @@
 import { ArkUIViewController, Compose } from '@cpf-kmp-cmp/compose';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import nativeApi from 'libentry.so';
+import { CaptchaOcr } from '../ocr/CaptchaOcr';
 
 const DOMAIN = 0x0000;
 
@@ -8,6 +9,7 @@ const DOMAIN = 0x0000;
 @Component
 struct Index {
   private controller: ArkUIViewController | undefined = undefined;
+  private ocr: CaptchaOcr | undefined;
 
   @State errorMessage: string = 'Native module not ready';
 
@@ -18,7 +20,15 @@ struct Index {
       return;
     }
     try {
-      this.controller = nativeApi.MainArkUIViewController();
+      const context = this.getUIContext().getHostContext();
+      const filesDir = context?.filesDir;
+      if (!filesDir || !context) {
+        throw new Error('Application filesDir is unavailable');
+      }
+      this.ocr = new CaptchaOcr(context.resourceManager);
+      this.controller = nativeApi.MainArkUIViewController(filesDir, (id: number, tensor: ArrayBuffer, width: number) => {
+        this.ocr?.recognize(id, tensor, width);
+      });
       const state = this.controller ? 'created' : 'not_created';
       hilog.info(DOMAIN, 'Compose', 'controller init state: %{public}s', state);
       if (!this.controller) {
@@ -30,20 +40,32 @@ struct Index {
     }
   }
 
+  aboutToDisappear(): void {
+    nativeApi.releaseCaptcha();
+    this.ocr?.close();
+  }
+
   build() {
     Column() {
       if (this.controller) {
         Compose({
           controller: this.controller,
           libraryName: 'entry',
-          onBackPressed: () => this.controller!.onBackPress()
+          // This is the dispatcher's fallback, not a second back-event entry point.
+          onBackPressed: () => false
         })
+        .width('100%')
+        .height('100%')
+        .expandSafeArea([SafeAreaType.SYSTEM, SafeAreaType.CUTOUT], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM,
+          SafeAreaEdge.START, SafeAreaEdge.END])
       } else {
         Text(this.errorMessage)
       }
     }
     .width('100%')
     .height('100%')
+    .expandSafeArea([SafeAreaType.SYSTEM, SafeAreaType.CUTOUT], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM,
+      SafeAreaEdge.START, SafeAreaEdge.END])
   }
 
   onPageHide() {
@@ -58,7 +80,7 @@ struct Index {
     }
   }
 
-  onBackPressed(): boolean {
+  onBackPress(): boolean {
     return this.controller ? this.controller.onBackPress() : false;
   }
 }

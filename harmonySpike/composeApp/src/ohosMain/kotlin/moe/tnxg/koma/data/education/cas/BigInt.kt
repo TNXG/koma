@@ -111,10 +111,12 @@ internal class BigInt private constructor(private val limbs: IntArray) {
     fun mod(m: BigInt): BigInt {
         var a = this
         if (a < m) return a
-        var shifted = m.shl(a.bitLength() - m.bitLength())
-        while (!shifted.isZero) {
+        val shift = a.bitLength() - m.bitLength()
+        var shifted = m.shl(shift)
+        // Only shift back to m, never below it: smaller divisors destroy the remainder.
+        for (bit in shift downTo 0) {
             if (a >= shifted) a = a.minus(shifted)
-            shifted = shifted.shr(1)
+            if (bit != 0) shifted = shifted.shr(1)
         }
         return a
     }
@@ -172,7 +174,8 @@ internal class BigInt private constructor(private val limbs: IntArray) {
         fun fromHex(hex: String): BigInt {
             val bytes = ByteArray((hex.length + 1) / 2)
             var byteIndex = 0
-            var high = true
+            // An odd-length hex string starts with a low nibble, not a high one.
+            var high = hex.length % 2 == 0
             for (c in hex) {
                 val v = when (c) {
                     in '0'..'9' -> c - '0'

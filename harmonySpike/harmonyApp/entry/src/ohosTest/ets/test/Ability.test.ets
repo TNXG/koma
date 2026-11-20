@@ -1,35 +1,47 @@
-import { hilog } from '@kit.PerformanceAnalysisKit';
-import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from '@ohos/hypium';
+import { Want } from '@kit.AbilityKit';
+import { abilityDelegatorRegistry, Driver, ON } from '@kit.TestKit';
+import { beforeEach, describe, expect, it } from '@ohos/hypium';
 
 export default function abilityTest() {
   describe('ActsAbilityTest', () => {
-    // Defines a test suite. Two parameters are supported: test suite name and test suite function.
-    beforeAll(() => {
-      // Presets an action, which is performed only once before all test cases of the test suite start.
-      // This API supports only one parameter: preset action function.
-    })
-    beforeEach(() => {
-      // Presets an action, which is performed before each unit test case starts.
-      // The number of execution times is the same as the number of test cases defined by **it**.
-      // This API supports only one parameter: preset action function.
-    })
-    afterEach(() => {
-      // Presets a clear action, which is performed after each unit test case ends.
-      // The number of execution times is the same as the number of test cases defined by **it**.
-      // This API supports only one parameter: clear action function.
-    })
-    afterAll(() => {
-      // Presets a clear action, which is performed after all test cases of the test suite end.
-      // This API supports only one parameter: clear action function.
-    })
-    it('assertContain', 0, () => {
-      // Defines a test case. This API supports three parameters: test case name, filter parameter, and test case function.
-      hilog.info(0x0000, 'testTag', '%{public}s', 'it begin');
-      let a = 'abc';
-      let b = 'b';
-      // Defines a variety of assertion methods, which are used to declare expected boolean conditions.
-      expect(a).assertContain(b);
-      expect(a).assertEqual(a);
-    })
-  })
+    const driver = Driver.create();
+    const delegator = abilityDelegatorRegistry.getAbilityDelegator();
+    const want: Want = {
+      bundleName: 'moe.tnxg.koma',
+      moduleName: 'entry',
+      abilityName: 'EntryAbility'
+    };
+
+    // Run on a fresh, logged-out test installation with -s timeout 60000.
+    // These flows neither contact a school nor change persisted user data.
+    beforeEach(async () => {
+      await delegator.startAbility(want);
+      await driver.waitForComponent(ON.text('欢迎使用 Koma'), 10000);
+    });
+
+    it('systemBackReturnsFromSchoolsToWelcome', 0, async () => {
+      await (await driver.waitForComponent(ON.text('开始使用'), 5000)).click();
+      await driver.waitForComponent(ON.text('登录哪所学校？'), 5000);
+      await driver.pressBack();
+      const welcome = await driver.waitForComponent(ON.text('欢迎使用 Koma'), 5000);
+      expect(await welcome.getText()).assertEqual('欢迎使用 Koma');
+    });
+
+    it('homeAndResumeRetainTheRouteAndOpenSheet', 0, async () => {
+      await (await driver.waitForComponent(ON.text('导入离线课表'), 5000)).click();
+      await (await driver.waitForComponent(ON.text('用 AI 识图导入'), 5000)).click();
+      await driver.waitForComponent(ON.text('复制提示词'), 5000);
+      await driver.pressHome();
+      // Cross the renderer's delayed surface cleanup without destroying the ability.
+      await driver.delayMs(2500);
+      await delegator.startAbility(want);
+      const copy = await driver.waitForComponent(ON.text('复制提示词'), 5000);
+      expect(await copy.getText()).assertEqual('复制提示词');
+      await driver.pressBack();
+      await driver.waitForComponent(ON.text('预览课表'), 5000);
+      await driver.pressBack();
+      const welcome = await driver.waitForComponent(ON.text('欢迎使用 Koma'), 5000);
+      expect(await welcome.getText()).assertEqual('欢迎使用 Koma');
+    });
+  });
 }
