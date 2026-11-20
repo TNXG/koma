@@ -75,7 +75,7 @@ fun AboutScreen(
             SettingsNavRow(
                 title = "开源许可",
                 glyph = KomaGlyph.Book,
-                value = "3 项",
+                value = "$LICENSE_ENTRY_COUNT 项",
                 onClick = onLicenses,
             )
             SettingsDivider()
