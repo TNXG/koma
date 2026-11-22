@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import moe.tnxg.koma.ui.component.layout.adaptiveContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -42,7 +42,7 @@ fun WelcomeScreen(onStart: () -> Unit, onSkip: () -> Unit, onJsonImport: () -> U
     val colors = KomaTheme.colors
     val iconShape = RoundedCornerShape(24.dp)
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(Modifier.widthIn(max = 430.dp).fillMaxSize()) {
+        Column(Modifier.fillMaxSize().adaptiveContentWidth()) {
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp, vertical = 48.dp)) {
                 Image(KomaAppIcon, "Koma",

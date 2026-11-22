@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import moe.tnxg.koma.ui.component.icon.KomaGlyph
 import moe.tnxg.koma.ui.component.icon.KomaIcon
+import moe.tnxg.koma.ui.component.layout.adaptiveContentWidth
 import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.platform.PlatformBackHandler
 import moe.tnxg.koma.ui.platform.swipeBackToPop
@@ -84,7 +85,7 @@ fun SubpageScaffold(
                     .padding(top = 8.dp, bottom = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Column(Modifier.fillMaxWidth().widthIn(max = 540.dp)) {
+                Column(Modifier.fillMaxWidth().adaptiveContentWidth().widthIn(max = 540.dp)) {
                     KomaText(
                         text = title,
                         size = 29,

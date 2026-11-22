@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.dialog
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -55,6 +56,7 @@ import kotlinx.coroutines.launch
 import moe.tnxg.koma.ui.platform.PlatformBackHandler
 import moe.tnxg.koma.ui.theme.KomaTheme
 import moe.tnxg.koma.app.preferences.LocalAppPreferences
+import moe.tnxg.koma.ui.component.layout.AdaptiveRules
 import top.yukonga.miuix.kmp.blur.Backdrop
 
 @Composable
@@ -69,6 +71,11 @@ fun KomaSheet(open: Boolean, onDismiss: () -> Unit, horizontalPadding: Dp = 16.d
     var drag by remember { mutableFloatStateOf(0f) }
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
+    val windowWidthDp = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width / density.density
+    }
+    // 宽屏（≥600dp 窗口）弹层限宽居中：贴底但不再悬空于左右大片空白。
+    val sheetWidth = AdaptiveRules.bottomSheetWidth(windowWidthDp)
     val shape = remember(glassBackdrop != null) {
         RoundedCornerShape(topStart = if (glassBackdrop != null) 26.dp else 12.dp,
             topEnd = if (glassBackdrop != null) 26.dp else 12.dp)
@@ -88,7 +95,8 @@ fun KomaSheet(open: Boolean, onDismiss: () -> Unit, horizontalPadding: Dp = 16.d
         Box(Modifier.fillMaxSize()
             .background(colors.scrim.copy(alpha = colors.scrim.alpha * progress.value * (1 - drag / height).coerceIn(0f, 1f)))
             .clickable(interactions, indication = null, onClick = onDismiss))
-        Box(Modifier.align(Alignment.BottomCenter).widthIn(max = 430.dp).fillMaxWidth()) {
+        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+            .widthIn(max = sheetWidth ?: 430.dp)) {
             val record = rememberGraphicsLayer()
             Column(
                 Modifier.fillMaxWidth()

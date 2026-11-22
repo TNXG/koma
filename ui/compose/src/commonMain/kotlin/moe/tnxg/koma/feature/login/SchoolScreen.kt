@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import moe.tnxg.koma.ui.component.layout.adaptiveContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,7 +62,7 @@ fun SchoolScreen(onSelect: () -> Unit, onBack: () -> Unit) {
     val keyword = query.trim()
     val results = remember(keyword) { if (keyword.isEmpty()) SCHOOLS else SCHOOLS.filter { it.matches(keyword) } }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = 430.dp).fillMaxSize()) {
+        Column(Modifier.fillMaxSize().adaptiveContentWidth()) {
             Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 34.dp)) {
                 KomaTextButton("返回", onBack, Modifier.padding(vertical = 12.dp))
                 KomaText(
