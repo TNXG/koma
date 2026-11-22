@@ -9,6 +9,7 @@ import moe.tnxg.koma.domain.model.TimetableSnapshot
 import moe.tnxg.koma.domain.timeline.AgendaState
 import moe.tnxg.koma.domain.timeline.ClassState
 import moe.tnxg.koma.domain.timeline.todayAgenda
+import moe.tnxg.koma.domain.timeline.upcomingAgendas
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -69,6 +70,25 @@ class TodayAgendaTest {
         assertEquals(3, preview.week)
         assertEquals("next-week", preview.visibleCourses(1).single().time.course.id)
         assertNull(preview.nextChangeMinute)
+    }
+
+    @Test fun extraDaysStartAfterTheDisplayedDayAndSkipGapsAndSuspensions() {
+        val multiWeek = snapshot.copy(
+            semester = snapshot.semester.copy(totalWeeks = 3),
+            courses = snapshot.courses + listOf(
+                first.copy(id = "friday", weekday = 5, weeks = listOf(2), suspendedWeeks = listOf(2)),
+                first.copy(id = "following-monday", weeks = listOf(3)),
+                first.copy(id = "following-wednesday", weekday = 3, weeks = listOf(3)),
+                first.copy(id = "outside-term", weeks = listOf(4)),
+            ),
+        )
+        // Sunday already previews Monday; extending that widget must not repeat Monday.
+        val firstShown = todayAgenda(multiWeek, start, LocalDate(2026, 9, 6), 700)
+        val extra = upcomingAgendas(multiWeek, start, firstShown.date, 4)
+        assertEquals(listOf("2026-09-08", "2026-09-14", "2026-09-16"), extra.map { it.date.toString() })
+        assertEquals(listOf(2, 3, 3), extra.map { it.week })
+        assertEquals(listOf("tomorrow", "following-monday", "following-wednesday"),
+            extra.map { it.visibleCourses(1).single().time.course.id })
     }
 
     @Test fun datesWithNoRemainingClassDayRetainAnEmptyState() {

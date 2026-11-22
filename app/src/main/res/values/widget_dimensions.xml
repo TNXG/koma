@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="widget_inset_horizontal">12dp</dimen>
+    <dimen name="widget_inset_vertical">10dp</dimen>
+    <dimen name="widget_day_gap">12dp</dimen>
+    <dimen name="widget_day_header_gap">4dp</dimen>
+</resources>

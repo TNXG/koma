@@ -42,27 +42,49 @@ fun todayAgenda(snapshot: TimetableSnapshot?, startDate: String?, date: LocalDat
         if (times.isNotEmpty()) return classify(date, week, times, minute)
     }
 
-    val nextOffset = nextClassOffset(snapshot, isoWeekday(start), offset)
-    if (nextOffset != null) {
-        val upcoming = addDays(start, nextOffset)
-        val upcomingWeek = nextOffset / 7 + 1
-        return classify(upcoming, upcomingWeek, coursesOnWeekday(snapshot, upcomingWeek, isoWeekday(upcoming)), null)
-    }
+    val nextOffset = nextClassOffsets(snapshot, isoWeekday(start), offset, limit = 1)[0]
+    if (nextOffset != Int.MAX_VALUE) return upcomingAgenda(snapshot, start, nextOffset)
     return if (week == 0) TodayAgenda(AgendaState.BeforeTerm, date)
     else TodayAgenda(AgendaState.NoClasses, date, week)
 }
 
-private fun nextClassOffset(snapshot: TimetableSnapshot, startWeekday: Int, after: Int): Int? {
-    var nearest = Int.MAX_VALUE
-    for (course in snapshot.courses) {
-        val weekdayOffset = (course.weekday - startWeekday + 7) % 7
-        for (week in course.weeks) {
-            if (week !in 1..snapshot.semester.totalWeeks || week in course.suspendedWeeks) continue
-            val candidate = (week - 1) * 7 + weekdayOffset
-            if (candidate > after && candidate < nearest) nearest = candidate
+/** The next [limit] distinct teaching dates strictly after the date already on screen. */
+fun upcomingAgendas(snapshot: TimetableSnapshot?, startDate: String?, after: LocalDate, limit: Int): List<TodayAgenda> {
+    if (snapshot == null || startDate == null || limit <= 0) return emptyList()
+    val start = runCatching { LocalDate.parse(startDate) }.getOrNull() ?: return emptyList()
+    val offset = daysBetween(start, after)
+    return buildList {
+        for (next in nextClassOffsets(snapshot, isoWeekday(start), offset, limit)) {
+            if (next == Int.MAX_VALUE) break
+            add(upcomingAgenda(snapshot, start, next))
         }
     }
-    return nearest.takeUnless { it == Int.MAX_VALUE }
+}
+
+private fun upcomingAgenda(snapshot: TimetableSnapshot, start: LocalDate, offset: Int): TodayAgenda {
+    val date = addDays(start, offset)
+    val week = offset / 7 + 1
+    return classify(date, week, coursesOnWeekday(snapshot, week, isoWeekday(date)), null)
+}
+
+private fun nextClassOffsets(snapshot: TimetableSnapshot, startWeekday: Int, after: Int, limit: Int): IntArray {
+    val nearest = IntArray(limit) { Int.MAX_VALUE }
+    val weeks = 1..snapshot.semester.totalWeeks
+    for (course in snapshot.courses) {
+        if (course.weekday !in 1..7) continue
+        val weekdayOffset = (course.weekday - startWeekday + 7) % 7
+        for (week in course.weeks) {
+            if (week !in weeks) continue
+            val candidate = (week - 1) * 7 + weekdayOffset
+            if (candidate <= after || candidate >= nearest.last() || week in course.suspendedWeeks) continue
+            val result = nearest.binarySearch(candidate)
+            if (result >= 0) continue
+            val index = -result - 1
+            nearest.copyInto(nearest, index + 1, index, nearest.lastIndex)
+            nearest[index] = candidate
+        }
+    }
+    return nearest
 }
 
 private fun classify(date: LocalDate, week: Int, times: List<CourseTime>, minute: Int?): TodayAgenda {

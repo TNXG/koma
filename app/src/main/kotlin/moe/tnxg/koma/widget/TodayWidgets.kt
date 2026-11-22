@@ -20,6 +20,7 @@ import moe.tnxg.koma.MainActivity
 import moe.tnxg.koma.app.preferences.APP_PREFERENCES_KEY
 import moe.tnxg.koma.app.preferences.loadAppPreferences
 import moe.tnxg.koma.domain.timeline.todayAgenda
+import moe.tnxg.koma.domain.timeline.upcomingAgendas
 import moe.tnxg.koma.platform.TimetableSettings
 import moe.tnxg.koma.platform.komaSettings
 import java.time.ZonedDateTime
@@ -81,7 +82,9 @@ internal class TodayWidgets(private val context: Context) : SharedPreferences.On
         val launch = Intent(Intent.ACTION_MAIN).setClass(context, MainActivity::class.java)
             .addCategory(Intent.CATEGORY_LAUNCHER).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         val open = PendingIntent.getActivity(context, 0, launch, PendingIntent.FLAG_IMMUTABLE)
-        val views = TodayWidgetViews(context, date, agenda, loadAppPreferences { settings.getString(it, null) }, open)
+        val views = TodayWidgetViews(context, date, agenda, loadAppPreferences { settings.getString(it, null) }, open) { limit ->
+            upcomingAgendas(snapshot, start, agenda.date, limit)
+        }
         for (id in wideIds) manager.updateAppWidget(id, views.forOptions(manager.getAppWidgetOptions(id), 174, 108))
         for (id in tallIds) manager.updateAppWidget(id, views.forOptions(manager.getAppWidgetOptions(id), 110, 160))
     }
