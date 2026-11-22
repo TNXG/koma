@@ -40,6 +40,12 @@ class TodayAgendaTest {
         assertEquals(AgendaState.Finished, todayAgenda(snapshot, start, day, 645).state)
     }
 
+    @Test fun aFinishedClassDoesNotTakeSpaceFromRemainingCourses() {
+        val remaining = todayAgenda(snapshot, start, day, 525)
+        assertEquals(listOf("moved"), remaining.visibleCourses(3).map { it.time.course.id })
+        assertEquals(1, remaining.courses.size)
+    }
+
     @Test fun missingTimesKeepTheCourseWithoutClaimingItIsInProgressOrFinished() {
         val agenda = todayAgenda(snapshot.copy(timeGrid = snapshot.timeGrid.take(1)), start, day, 660)
         val visible = agenda.visibleCourses(1).single()

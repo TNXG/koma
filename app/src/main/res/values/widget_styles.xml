@@ -12,16 +12,16 @@
 
     <style name="WidgetAgenda.Title">
         <item name="android:fontFamily">@font/inter500</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">11sp</item>
     </style>
 
     <style name="WidgetAgenda.Course">
         <item name="android:fontFamily">@font/inter500</item>
-        <item name="android:textSize">15sp</item>
+        <item name="android:textSize">13sp</item>
     </style>
 
     <style name="WidgetAgenda.Caption">
-        <item name="android:textSize">12sp</item>
+        <item name="android:textSize">10sp</item>
         <item name="android:textColor">?android:attr/textColorSecondary</item>
     </style>
 </resources>

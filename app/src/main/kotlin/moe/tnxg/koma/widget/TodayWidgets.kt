@@ -26,7 +26,8 @@ import java.time.ZonedDateTime
 
 internal class TodayWidgets(private val context: Context) : SharedPreferences.OnSharedPreferenceChangeListener {
     private val settings = context.komaSettings()
-    private val component = ComponentName(context, TodayWidgetProvider::class.java)
+    private val wideProvider = ComponentName(context, TodayWidgetProvider::class.java)
+    private val tallProvider = ComponentName(context, TallTodayWidgetProvider::class.java)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val refreshLock = Mutex()
 
@@ -54,10 +55,11 @@ internal class TodayWidgets(private val context: Context) : SharedPreferences.On
 
     private fun update() {
         val manager = AppWidgetManager.getInstance(context)
-        val ids = manager.getAppWidgetIds(component)
+        val wideIds = manager.getAppWidgetIds(wideProvider)
+        val tallIds = manager.getAppWidgetIds(tallProvider)
         val alarm = context.getSystemService(AlarmManager::class.java)
-        val refreshIntent = Intent(TodayWidgetProvider.REFRESH_ACTION).setComponent(component)
-        if (ids.isEmpty()) {
+        val refreshIntent = Intent(TodayWidgetProvider.REFRESH_ACTION).setComponent(wideProvider)
+        if (wideIds.isEmpty() && tallIds.isEmpty()) {
             PendingIntent.getBroadcast(context, 0, refreshIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE)
                 ?.let { alarm.cancel(it); it.cancel() }
             return
@@ -80,6 +82,7 @@ internal class TodayWidgets(private val context: Context) : SharedPreferences.On
             .addCategory(Intent.CATEGORY_LAUNCHER).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         val open = PendingIntent.getActivity(context, 0, launch, PendingIntent.FLAG_IMMUTABLE)
         val views = TodayWidgetViews(context, date, agenda, loadAppPreferences { settings.getString(it, null) }, open)
-        for (id in ids) manager.updateAppWidget(id, views.forOptions(manager.getAppWidgetOptions(id)))
+        for (id in wideIds) manager.updateAppWidget(id, views.forOptions(manager.getAppWidgetOptions(id), 174, 108))
+        for (id in tallIds) manager.updateAppWidget(id, views.forOptions(manager.getAppWidgetOptions(id), 110, 160))
     }
 }

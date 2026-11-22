@@ -70,7 +70,7 @@ private fun classify(date: LocalDate, week: Int, times: List<CourseTime>, minute
     var next = -1
     var unknown = -1
     var boundary = 24 * 60
-    val courses = times.mapIndexed { index, time ->
+    val courses = times.mapIndexedTo(ArrayList(times.size)) { index, time ->
         val start = time.start
         val end = time.end
         val state = if (minute == null) {
@@ -108,6 +108,10 @@ private fun classify(date: LocalDate, week: Int, times: List<CourseTime>, minute
         unknown >= 0 -> unknown
         else -> courses.lastIndex
     }
-    val state = if (courses[focus].state == ClassState.Finished) AgendaState.Finished else AgendaState.Classes
-    return TodayAgenda(state, date, week, courses, boundary.takeIf { it < 24 * 60 }, focus)
+    val focusedCourse = courses[focus]
+    val state = if (focusedCourse.state == ClassState.Finished) AgendaState.Finished else AgendaState.Classes
+    val visibleFocus = if (state == AgendaState.Classes && courses.removeAll { it.state == ClassState.Finished }) {
+        courses.indexOf(focusedCourse)
+    } else focus
+    return TodayAgenda(state, date, week, courses, boundary.takeIf { it < 24 * 60 }, visibleFocus)
 }

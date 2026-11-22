@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 import moe.tnxg.koma.KomaApplication
 
-class TodayWidgetProvider : AppWidgetProvider() {
+open class TodayWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             AppWidgetManager.ACTION_APPWIDGET_UPDATE,
@@ -26,3 +26,5 @@ class TodayWidgetProvider : AppWidgetProvider() {
         const val REFRESH_ACTION = "moe.tnxg.koma.widget.REFRESH_TODAY"
     }
 }
+
+class TallTodayWidgetProvider : TodayWidgetProvider()
