@@ -41,10 +41,10 @@
 
 | 安装包 | 适用设备 | 说明 |
 | --- | --- | --- |
-| `koma-<版本>-arm64-v8a.apk` | **绝大多数主流手机**（推荐） | 64 位 ARM 架构，体积最小 |
-| `koma-<版本>-universal.apk` | 不确定架构时选择 | 包含全部架构支持 |
-| `koma-<版本>-armeabi-v7a.apk` | 较早的 32 位手机 | 32 位 ARM 架构 |
-| `koma-<版本>-x86_64.apk` / `x86.apk` | 电脑模拟器、x86 平板 | x86 架构设备 |
+| `Koma-<版本>-android-arm64-v8a.apk` | **绝大多数主流手机**（推荐） | 64 位 ARM 架构，体积最小 |
+| `Koma-<版本>-android-universal.apk` | 不确定架构时选择 | 包含全部架构支持 |
+| `Koma-<版本>-android-armeabi-v7a.apk` | 较早的 32 位手机 | 32 位 ARM 架构 |
+| `Koma-<版本>-android-x86_64.apk` / `Koma-<版本>-android-x86.apk` | 电脑模拟器、x86 平板 | x86 架构设备 |
 
 > 曾使用过旧版（WebView / Capacitor 版本）的用户，覆盖安装或首次打开时会自动迁入原有课表和开学时间。
 

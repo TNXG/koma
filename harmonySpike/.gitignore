@@ -44,7 +44,6 @@ harmonyApp/entry/src/main/resources/rawfile/composeResources/
 
 # Extracted third-party JAR metadata
 third_party/**/META-INF/
-# 机器本地签名材料（不入库；模板见 build-profile.template.json5，本地缺失时运行 inject-signing.ps1）
+# 机器本地签名材料（不入库；模板见 build-profile.template.json5，本地缺失时运行 inject-signing.ps1）。
+# 只忽略工程级文件：模块级 entry/build-profile.json5 是普通工程配置，需要入库供 CLI/CI 使用。
 harmonyApp/build-profile.json5
-
-build-profile.json5

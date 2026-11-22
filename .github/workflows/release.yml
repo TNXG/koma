@@ -14,7 +14,9 @@ concurrency:
 
 jobs:
   hap:
-    runs-on: ubuntu-latest
+    # ubuntu-26.04 只提供 libxml2-16（soname libxml2.so.16），而 Kotlin/Native 预编译的
+    # ld.lld 硬链接 libxml2.so.2，链接 libkn.so 时直接加载失败。24.04 仍是 libxml2 2.9。
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
 
@@ -65,14 +67,27 @@ jobs:
           export PATH="$HOS_CLT/bin:$PATH"
           ohpm install --all
 
-      # CI 无本地签名材料：剥离 machine-local 的 signingConfigs，产出未签名 HAP
-      - name: Strip machine-local signing config
-        run: python3 tools/strip-hap-signing.py harmonySpike/harmonyApp/build-profile.json5
+      # 工程级 build-profile.json5 是 machine-local 文件（含 DevEco 自动签名路径，已 gitignore）。
+      # 从 secret 还原本地配置与签名材料，脚本再把材料路径重指到临时目录、抹掉本机 SDK 版本，
+      # 产出与工具链一致的可安装 signed HAP；模块级 entry/build-profile.json5 走仓库版本。
+      - name: Restore HAP build profile and signing materials
+        env:
+          HAP_BUILD_PROFILE_BASE64: ${{ secrets.HAP_BUILD_PROFILE_BASE64 }}
+          HAP_SIGNING_MATERIALS_BASE64: ${{ secrets.HAP_SIGNING_MATERIALS_BASE64 }}
+        run: |
+          set -euo pipefail
+          materials="$RUNNER_TEMP/hap-signing"
+          mkdir -p "$materials"
+          printf '%s' "$HAP_SIGNING_MATERIALS_BASE64" | base64 -d | tar -xz -C "$materials"
+          profile=harmonySpike/harmonyApp/build-profile.json5
+          printf '%s' "$HAP_BUILD_PROFILE_BASE64" | base64 -d > "$profile"
+          python3 tools/prepare-hap-profile.py "$profile" "$materials"
 
       - name: Assemble HAP
         working-directory: harmonySpike/harmonyApp
         env:
           HOS_CLT: ${{ github.workspace }}/.tools/ohos/command-line-tools
+          DEVECO_SDK_HOME: ${{ github.workspace }}/.tools/ohos/command-line-tools/sdk
         run: |
           export PATH="$HOS_CLT/bin:$HOS_CLT/tool/node/bin:$PATH"
           export DEVECO_NODE_HOME="$HOS_CLT/tool/node"
@@ -135,7 +150,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/verify-apks.py
-          for apk in app/build/outputs/apk/release/koma-*.apk; do
+          for apk in app/build/outputs/apk/release/Koma-*.apk; do
             "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify "$apk"
             echo "signed: $apk"
           done
@@ -143,13 +158,44 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: koma-apks
-          path: app/build/outputs/apk/release/koma-*.apk
+          path: app/build/outputs/apk/release/Koma-*.apk
           if-no-files-found: error
 
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [hap, apk]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: koma-apks
+          path: dist/apk
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: koma-hap
+          path: dist/hap
+
+      # 重打同一个 tag 时 release 已存在（删 tag 会让它变成 draft）：覆盖资产而不是失败，
+      # 保留既有说明后显式发布，避免留下 draft。HAP 按 APK 的命名习惯改名为
+      # Koma-<版本>-ohos-<架构>.hap 再上传。
       - name: Publish GitHub release
-        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          gh release create "$GITHUB_REF_NAME" app/build/outputs/apk/release/koma-*.apk \
-            --title "Koma $GITHUB_REF_NAME" --generate-notes --verify-tag
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          cp dist/hap/entry-default-signed.hap "dist/hap/Koma-${version}-ohos-arm64-v8a.hap"
+          assets=(dist/apk/Koma-*.apk dist/hap/Koma-*.hap)
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            # 旧命名的 koma-*.apk 会在改名后残留，先删掉，release 里只保留 Koma- 资产。
+            for stale in $(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | grep -E '^koma-.*\.apk$' || true); do
+              gh release delete-asset "$GITHUB_REF_NAME" "$stale" -y
+            done
+            gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber
+            gh release edit "$GITHUB_REF_NAME" --draft=false --verify-tag
+          else
+            gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
+              --title "Koma $GITHUB_REF_NAME" --generate-notes --verify-tag
+          fi

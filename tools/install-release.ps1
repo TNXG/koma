@@ -18,7 +18,7 @@ Set-Location $root
 gradle :app:assembleRelease
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-# ABI splits produce koma-<version>-<abi>.apk; the universal one installs anywhere.
+# ABI splits produce Koma-<version>-android-<abi>.apk; the universal one installs anywhere.
 $apk = @(Get-ChildItem -LiteralPath "$root/app/build/outputs/apk/release" -Filter '*-universal.apk' -File)
 if ($apk.Count -ne 1) { throw "Expected one universal release APK, found $($apk.Count)." }
 

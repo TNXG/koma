@@ -6,7 +6,7 @@ import sys
 import zipfile
 
 ABIS = ("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
-SPLIT = re.compile(r"-([a-z0-9_]+(?:-[a-z0-9]+)?)\.apk$")
+SPLIT = re.compile(r"-android-([a-z0-9_]+(?:-[a-z0-9]+)?)\.apk$")
 NATIVE = re.compile(r"lib/([^/]+)/libonnxruntime\.so")
 MODEL = "assets/ocr/captcha.onnx"
 
@@ -16,7 +16,7 @@ def wanted(abi: str) -> set[str]:
 
 
 def main(argv: list[str]) -> int:
-    apks = argv[1:] or sorted(glob.glob("app/build/outputs/apk/release/koma-*.apk"))
+    apks = argv[1:] or sorted(glob.glob("app/build/outputs/apk/release/Koma-*.apk"))
     if not apks:
         print("no release APKs found", file=sys.stderr)
         return 1

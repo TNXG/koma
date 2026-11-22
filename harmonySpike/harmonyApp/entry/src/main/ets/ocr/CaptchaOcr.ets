@@ -68,7 +68,7 @@ export class CaptchaOcr {
   }
 
   private failPending(): void {
-    this.pending.forEach((id: number) => nativeApi.completeCaptcha(id, ''));
+    this.pending.forEach((id: number) => { nativeApi.completeCaptcha(id, ''); });
     this.pending.clear();
   }
 
