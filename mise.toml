@@ -56,6 +56,10 @@ description = "Install and launch the Android application on a connected device"
 run = "gradle :app:installDebug && .tools/android/platform-tools/adb shell am start -n moe.tnxg.koma/.MainActivity"
 run_windows = "powershell -NoProfile -ExecutionPolicy Bypass -File tools/run.ps1"
 
+[tasks.inspect]
+description = "Query the running debug build's ART heap on a rooted arm64 device"
+run = "bash tools/artseek.sh"
+
 [tasks.check]
 description = "Verify behavior and component size constraints"
 run = "bash tools/check.sh"

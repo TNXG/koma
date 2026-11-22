@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "artseek": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/tools/artseek-mcp.mjs"]
+    }
+  }
+}
