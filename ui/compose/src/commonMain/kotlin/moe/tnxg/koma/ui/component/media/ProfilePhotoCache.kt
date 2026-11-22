@@ -3,6 +3,8 @@ package moe.tnxg.koma.ui.component.media
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import moe.tnxg.koma.platform.ImageServices
 
@@ -13,6 +15,9 @@ import moe.tnxg.koma.platform.ImageServices
  */
 internal object ProfilePhotoCache {
     private val decoded = mutableMapOf<String, ImageBitmap>()
+
+    /** Home preload and the profile cover can ask for the same image; resolve it once. */
+    private val coverLock = Mutex()
 
     fun get(path: String): ImageBitmap? = decoded[path]
 
@@ -31,9 +36,12 @@ internal object ProfilePhotoCache {
      */
     suspend fun cover(services: ImageServices?, photoPath: String, forceRefresh: Boolean = false): ImageBitmap {
         if (!forceRefresh) decoded[photoPath]?.let { return it }
-        val bitmap = withContext(Dispatchers.Default) { resolveCover(services, photoPath, forceRefresh) }
-        decoded[photoPath] = bitmap
-        return bitmap
+        return coverLock.withLock {
+            if (!forceRefresh) decoded[photoPath]?.let { return@withLock it }
+            val bitmap = withContext(Dispatchers.Default) { resolveCover(services, photoPath, forceRefresh) }
+            decoded[photoPath] = bitmap
+            bitmap
+        }
     }
 
     /** A user-chosen photo decoded from local storage, or null when there is none. */

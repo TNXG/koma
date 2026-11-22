@@ -152,5 +152,10 @@ private fun WeekGridCard(group: WeekCourseGroup, date: LocalDate, today: LocalDa
             KomaText(location, Modifier.padding(top = 3.dp), size = 8.5f, lineHeight = 1.2f, weight = FontWeight.Medium,
                 color = foreground.copy(alpha = .65f), maxLines = 2)
         }
+        val teacher = course.teacher?.takeIf { it.isNotBlank() }
+        if (prefs.showTeacher && teacher != null && rowHeight * (group.endPeriod - group.startPeriod + 1) >= 64.dp) {
+            KomaText(teacher, Modifier.padding(top = 2.dp), size = 8.5f, lineHeight = 1.2f, weight = FontWeight.Medium,
+                color = foreground.copy(alpha = .65f), maxLines = 1)
+        }
     }
 }
