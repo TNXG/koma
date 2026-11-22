@@ -56,11 +56,11 @@ internal class TodayWidgetViews(
     private val variants = mutableMapOf<List<List<DayCell>>, RemoteViews>()
     private var extraDays: List<TodayAgenda> = emptyList()
     private var requestedDays = 0
-    private val horizontalInsets = 2 * dimensionDp(R.dimen.widget_inset_horizontal)
+    private val horizontalInsets = dimensionDp(R.dimen.widget_inset_start) + dimensionDp(R.dimen.widget_inset_end)
     private val verticalInsets = 2 * dimensionDp(R.dimen.widget_inset_vertical)
     private val dayGap = dimensionDp(R.dimen.widget_day_gap)
     private val dayHeaderHeight = dimensionDp(R.dimen.widget_day_header_gap) + lineHeight(11)
-    private val rowHeight = maxOf(35, 4 + lineHeight(13) + lineHeight(10))
+    private val rowHeight = maxOf(35, dimensionDp(R.dimen.widget_course_details_gap) + lineHeight(13) + lineHeight(10))
     private val footerHeight = 1 + lineHeight(10)
 
     fun forOptions(options: Bundle, defaultWidth: Int, defaultHeight: Int): RemoteViews {
@@ -80,7 +80,8 @@ internal class TodayWidgetViews(
     private fun lineHeight(sp: Int): Int {
         val metrics = context.resources.displayMetrics
         val px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp.toFloat(), metrics)
-        return ceil(px * 1.2f / metrics.density).toInt()
+        // CJK fallback fonts can produce taller lines than Inter's Latin metrics.
+        return ceil(px * 1.45f / metrics.density).toInt()
     }
 
     private fun dimensionDp(id: Int): Int =
@@ -91,7 +92,7 @@ internal class TodayWidgetViews(
     private fun forSize(width: Int, height: Int, defaultHeight: Int): RemoteViews {
         val contentWidth = width - horizontalInsets
         val contentHeight = height - verticalInsets
-        val minCellWidth = maxOf(104, lineHeight(11) * 7)
+        val minCellWidth = maxOf(104, lineHeight(11) * 6)
         val columns = ((contentWidth + dayGap) / (minCellWidth + dayGap)).coerceIn(1, 4)
         val minBandHeight = dayHeaderHeight + rowHeight
         val defaultRows = ((defaultHeight - verticalInsets - dayHeaderHeight) / rowHeight).coerceAtLeast(1)
@@ -125,7 +126,7 @@ internal class TodayWidgetViews(
         val withoutFooter = (room / rowHeight).coerceIn(1, 8)
         val overflow = when {
             total <= withoutFooter -> Overflow.None
-            width >= maxOf(154, lineHeight(11) * 11) -> Overflow.Header
+            width >= maxOf(150, lineHeight(11) * 9) -> Overflow.Header
             room >= rowHeight + footerHeight -> Overflow.Footer
             else -> Overflow.None
         }
