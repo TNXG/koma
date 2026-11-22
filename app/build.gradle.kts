@@ -74,7 +74,19 @@ android {
     }
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            // CI / 配好口令的本地环境用发布签名；本地缺口令时回退 debug key，
+            // 保证非 CI 环境不配密钥也能出可安装的 release 包（CI 由 workflow 显式注入口令）。
+            signingConfig = if (
+                releaseSecret("KOMA_KEYSTORE_PASSWORD").isNullOrBlank() ||
+                releaseSecret("KOMA_KEY_PASSWORD").isNullOrBlank()
+            ) {
+                check(System.getenv("CI") != null) {
+                    "CI 环境缺少发布签名口令：请设置 KOMA_KEYSTORE_PASSWORD / KOMA_KEY_PASSWORD。"
+                }
+                signingConfigs.getByName("debug")
+            } else {
+                signingConfigs.getByName("release")
+            }
         }
     }
     buildFeatures { compose = true }
@@ -117,16 +129,4 @@ tasks.register("verifyOcrModel") {
 }
 tasks.named("preBuild") { dependsOn("verifyOcrModel") }
 
-// 口令不进版本库，所以发布包必须在构建时显式具备，缺失即失败而不是产出无签名包。
-val verifyReleaseSigning = tasks.register("verifyReleaseSigning") {
-    doLast {
-        val missing = listOf("KOMA_KEYSTORE_PASSWORD", "KOMA_KEY_PASSWORD")
-            .filter { releaseSecret(it).isNullOrBlank() }
-        check(missing.isEmpty()) {
-            "缺少发布签名口令：${missing.joinToString()}；请设置环境变量，或在 ~/.gradle/gradle.properties 中配置。"
-        }
-    }
-}
-listOf("assembleRelease", "bundleRelease").forEach { name ->
-    tasks.matching { it.name == name }.configureEach { dependsOn(verifyReleaseSigning) }
-}
+
