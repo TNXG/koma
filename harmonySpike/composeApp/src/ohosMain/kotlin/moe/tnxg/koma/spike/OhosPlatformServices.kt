@@ -33,6 +33,8 @@ class OhosPlatformServices : PlatformServices {
 
     override val edu: EduService = XjvutEduService()
 
+    override val images: moe.tnxg.koma.platform.ImageServices = OhosImageServices()
+
     override val canRememberCredentials: Boolean = true
 
     override val notifications = null

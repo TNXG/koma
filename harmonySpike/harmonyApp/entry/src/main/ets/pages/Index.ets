@@ -2,6 +2,7 @@ import { ArkUIViewController, Compose } from '@cpf-kmp-cmp/compose';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import nativeApi from 'libentry.so';
 import { CaptchaOcr } from '../ocr/CaptchaOcr';
+import { pickPhotoBytes } from '../media/PhotoPick';
 
 const DOMAIN = 0x0000;
 
@@ -28,6 +29,10 @@ struct Index {
       this.ocr = new CaptchaOcr(context.resourceManager);
       this.controller = nativeApi.MainArkUIViewController(filesDir, (id: number, tensor: ArrayBuffer, width: number) => {
         this.ocr?.recognize(id, tensor, width);
+      }, (id: number) => {
+        pickPhotoBytes(context, id, (pickId: number, data: ArrayBuffer) => {
+          nativeApi.completePhotoPick(pickId, data);
+        });
       });
       const state = this.controller ? 'created' : 'not_created';
       hilog.info(DOMAIN, 'Compose', 'controller init state: %{public}s', state);

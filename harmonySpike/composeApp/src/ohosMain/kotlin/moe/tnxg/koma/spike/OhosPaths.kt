@@ -12,22 +12,35 @@ internal object OhosPaths {
         filesDir = path
     }
 
-    /** 同步读整个文件（仅小文件：登录会话/设置 JSON 均 < 100KB）。 */
+    /** 同步读整个文件；封面缓存也有数 MB，按块直读避免逐字节装箱。 */
     fun readBytes(path: String): ByteArray? = try {
         val fd = platform.posix.open(path, platform.posix.O_RDONLY, 0)
-        if (fd < 0) null
-        else {
-            val out = ArrayDeque<Byte>()
-            val buffer = ByteArray(16 * 1024)
+        if (fd < 0) null else readFully(fd)
+    } catch (_: Exception) {
+        null
+    }
+
+    private fun readFully(fd: Int): ByteArray {
+        try {
+            var out = ByteArray(16 * 1024)
+            var total = 0
+            val buffer = ByteArray(64 * 1024)
             while (true) {
                 val n = platform.posix.read(fd, buffer.refTo(0), buffer.size.convert())
                 if (n <= 0L) break
-                for (i in 0 until n.toInt()) out.add(buffer[i])
+                val count = n.toInt()
+                if (total + count > out.size) {
+                    var capacity = out.size
+                    while (capacity < total + count) capacity = capacity shl 1
+                    out = out.copyOf(capacity)
+                }
+                buffer.copyInto(out, total, 0, count)
+                total += count
             }
-            out.toByteArray()
-        }.also { platform.posix.close(fd) }
-    } catch (_: Exception) {
-        null
+            return if (total == out.size) out else out.copyOf(total)
+        } finally {
+            platform.posix.close(fd)
+        }
     }
 
     /** 同步写整个文件，权限 0600（会话/设置均为敏感数据）。 */
