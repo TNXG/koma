@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/today_widget_background"
+    android:clipToOutline="true">
+
+    <LinearLayout
+        android:id="@+id/widget_panel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="14dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="10dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/widget_date"
+                style="@style/WidgetAgenda.Title"
+                android:layout_width="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/widget_week"
+                style="@style/WidgetAgenda.Caption"
+                android:layout_marginStart="6dp"
+                android:fontFamily="@font/inter500"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/widget_rows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:orientation="vertical"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/widget_overflow"
+            style="@style/WidgetAgenda.Caption"
+            android:layout_marginTop="1dp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/widget_empty"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_message"
+                style="@style/WidgetAgenda.Course"
+                android:layout_width="match_parent"
+                android:text="@string/widget_description" />
+
+            <TextView
+                android:id="@+id/widget_hint"
+                style="@style/WidgetAgenda.Caption"
+                android:layout_marginTop="3dp"
+                android:layout_width="match_parent"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

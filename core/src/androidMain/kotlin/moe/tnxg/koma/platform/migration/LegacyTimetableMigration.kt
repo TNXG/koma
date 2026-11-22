@@ -13,6 +13,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import moe.tnxg.koma.platform.TimetableSettings
 import org.json.JSONObject
 import org.json.JSONTokener
 import java.io.ByteArrayInputStream
@@ -28,11 +29,11 @@ internal class LegacyTimetableMigration(
         if (preferences.getBoolean(MARKER, false)) return@withLock
         val legacy = readLegacyTimetable()
         val editor = preferences.edit()
-        if (!preferences.contains("koma.snapshot") && legacy.first != null) {
-            editor.putString("koma.snapshot", legacy.first)
+        if (!preferences.contains(TimetableSettings.SNAPSHOT) && legacy.first != null) {
+            editor.putString(TimetableSettings.SNAPSHOT, legacy.first)
         }
-        if (!preferences.contains("koma.startDate") && legacy.second != null) {
-            editor.putString("koma.startDate", legacy.second)
+        if (!preferences.contains(TimetableSettings.START_DATE) && legacy.second != null) {
+            editor.putString(TimetableSettings.START_DATE, legacy.second)
         }
         // A crash or storage failure must retry extraction, never mark before the data is durable.
         check(editor.putBoolean(MARKER, true).commit()) { "旧课表迁移保存失败" }

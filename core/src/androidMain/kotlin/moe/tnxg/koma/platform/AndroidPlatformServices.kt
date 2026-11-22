@@ -14,9 +14,11 @@ import moe.tnxg.koma.platform.photo.LocalPhotoStore
 import moe.tnxg.koma.security.CredentialVault
 import java.io.File
 
+fun Context.komaSettings() = getSharedPreferences("koma_settings", Context.MODE_PRIVATE)
+
 class AndroidPlatformServices(context: Context) : PlatformServices {
     private val app = context.applicationContext
-    private val settings = app.getSharedPreferences("koma_settings", Context.MODE_PRIVATE)
+    private val settings = app.komaSettings()
     private val vault = CredentialVault(app)
     override val edu = XjvutEduService(File(app.filesDir, "edu_cookies"))
     override val canRememberCredentials: Boolean get() = vault.isAvailable()

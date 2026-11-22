@@ -2,6 +2,7 @@ package moe.tnxg.koma.ui.theme
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import moe.tnxg.koma.domain.visual.CourseTone
 
 @Immutable
 data class KomaColors(
@@ -37,3 +38,13 @@ internal val DarkColors = KomaColors(
     toneGreen = Color(0xFF6FB894), toneViolet = Color(0xFFA99BEF), toneOrange = Color(0xFFD99B73),
     toneTeal = Color(0xFF6FB6BC),
 )
+
+fun KomaColors.courseTone(tone: CourseTone): Color = when (tone) {
+    CourseTone.Blue -> toneBlue
+    CourseTone.Amber -> toneAmber
+    CourseTone.Rose -> toneRose
+    CourseTone.Green -> toneGreen
+    CourseTone.Violet -> toneViolet
+    CourseTone.Orange -> toneOrange
+    CourseTone.Teal -> toneTeal
+}

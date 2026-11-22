@@ -1,4 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Koma</string>
+    <string name="widget_title">课程</string>
+    <string name="widget_description">在桌面查看最近的课程</string>
+    <string name="widget_date">%1$s · 周%2$s</string>
+    <string name="widget_tomorrow">明天 · %s</string>
+    <string name="widget_week">第 %d 周</string>
+    <string name="widget_period">第 %d 节</string>
+    <string name="widget_period_range">第 %1$d–%2$d 节</string>
+    <string name="widget_overflow">另有 %d 节</string>
+    <string name="widget_class_now">正在上课</string>
+    <string name="widget_class_next">下一节</string>
+    <string name="widget_class_unknown">时间待定</string>
+    <string name="widget_class_finished">已结束</string>
+    <string name="widget_no_timetable">还没有课表</string>
+    <string name="widget_import_hint">打开 Koma 导入课表</string>
+    <string name="widget_needs_start">还没设置开学日期</string>
+    <string name="widget_start_hint">打开 Koma 完成设置</string>
+    <string name="widget_before_term">还没开学</string>
+    <string name="widget_after_term">本学期已结束</string>
+    <string name="widget_no_classes">接下来没有课</string>
 </resources>

@@ -1,0 +1,113 @@
+package moe.tnxg.koma.domain.timeline
+
+import kotlinx.datetime.LocalDate
+import moe.tnxg.koma.domain.calendar.CourseTime
+import moe.tnxg.koma.domain.calendar.addDays
+import moe.tnxg.koma.domain.calendar.coursesOnWeekday
+import moe.tnxg.koma.domain.calendar.daysBetween
+import moe.tnxg.koma.domain.calendar.isoWeekday
+import moe.tnxg.koma.domain.model.TimetableSnapshot
+
+enum class AgendaState { NoTimetable, NeedsStart, BeforeTerm, AfterTerm, NoClasses, Classes, Finished }
+enum class ClassState { Finished, Current, Next, Later, Unknown }
+
+data class AgendaCourse(val time: CourseTime, val state: ClassState)
+
+class TodayAgenda internal constructor(
+    val state: AgendaState,
+    val date: LocalDate,
+    val week: Int? = null,
+    val courses: List<AgendaCourse> = emptyList(),
+    val nextChangeMinute: Int? = null,
+    private val focusIndex: Int = 0,
+) {
+    /** Keep chronological order and include the current or next course when space is limited. */
+    fun visibleCourses(capacity: Int): List<AgendaCourse> {
+        if (capacity <= 0) return emptyList()
+        if (courses.size <= capacity) return courses
+        val first = focusIndex.coerceAtMost(courses.size - capacity)
+        return courses.subList(first, first + capacity)
+    }
+}
+
+fun todayAgenda(snapshot: TimetableSnapshot?, startDate: String?, date: LocalDate, minute: Int): TodayAgenda {
+    if (snapshot == null) return TodayAgenda(AgendaState.NoTimetable, date)
+    val start = startDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        ?: return TodayAgenda(AgendaState.NeedsStart, date)
+    val offset = daysBetween(start, date)
+    val week = if (offset < 0) 0 else offset / 7 + 1
+    if (week > snapshot.semester.totalWeeks) return TodayAgenda(AgendaState.AfterTerm, date)
+    if (week > 0) {
+        val times = coursesOnWeekday(snapshot, week, isoWeekday(date))
+        if (times.isNotEmpty()) return classify(date, week, times, minute)
+    }
+
+    val nextOffset = nextClassOffset(snapshot, isoWeekday(start), offset)
+    if (nextOffset != null) {
+        val upcoming = addDays(start, nextOffset)
+        val upcomingWeek = nextOffset / 7 + 1
+        return classify(upcoming, upcomingWeek, coursesOnWeekday(snapshot, upcomingWeek, isoWeekday(upcoming)), null)
+    }
+    return if (week == 0) TodayAgenda(AgendaState.BeforeTerm, date)
+    else TodayAgenda(AgendaState.NoClasses, date, week)
+}
+
+private fun nextClassOffset(snapshot: TimetableSnapshot, startWeekday: Int, after: Int): Int? {
+    var nearest = Int.MAX_VALUE
+    for (course in snapshot.courses) {
+        val weekdayOffset = (course.weekday - startWeekday + 7) % 7
+        for (week in course.weeks) {
+            if (week !in 1..snapshot.semester.totalWeeks || week in course.suspendedWeeks) continue
+            val candidate = (week - 1) * 7 + weekdayOffset
+            if (candidate > after && candidate < nearest) nearest = candidate
+        }
+    }
+    return nearest.takeUnless { it == Int.MAX_VALUE }
+}
+
+private fun classify(date: LocalDate, week: Int, times: List<CourseTime>, minute: Int?): TodayAgenda {
+    var current = -1
+    var next = -1
+    var unknown = -1
+    var boundary = 24 * 60
+    val courses = times.mapIndexed { index, time ->
+        val start = time.start
+        val end = time.end
+        val state = if (minute == null) {
+            when {
+                start == null -> ClassState.Unknown
+                index == 0 -> ClassState.Next
+                else -> ClassState.Later
+            }
+        } else when {
+            end != null && end <= minute -> ClassState.Finished
+            start != null && start > minute -> {
+                boundary = minOf(boundary, start)
+                if (next == -1) {
+                    next = index
+                    ClassState.Next
+                } else ClassState.Later
+            }
+            start != null && end != null -> {
+                boundary = minOf(boundary, end)
+                if (current == -1) current = index
+                ClassState.Current
+            }
+            else -> {
+                if (end != null) boundary = minOf(boundary, end)
+                if (unknown == -1) unknown = index
+                ClassState.Unknown
+            }
+        }
+        AgendaCourse(time, state)
+    }
+    val focus = when {
+        minute == null -> 0
+        current >= 0 -> current
+        next >= 0 -> next
+        unknown >= 0 -> unknown
+        else -> courses.lastIndex
+    }
+    val state = if (courses[focus].state == ClassState.Finished) AgendaState.Finished else AgendaState.Classes
+    return TodayAgenda(state, date, week, courses, boundary.takeIf { it < 24 * 60 }, focus)
+}

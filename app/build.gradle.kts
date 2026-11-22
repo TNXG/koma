@@ -5,6 +5,28 @@ plugins {
     kotlin("plugin.compose")
 }
 
+// RemoteViews 用 Android 字体资源，沿用 Compose 的同一份 Inter 源文件。
+abstract class WidgetFontResources : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val fonts: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        val destination = outputDirectory.dir("font").get().asFile.apply { mkdirs() }
+        for (font in fonts.files) font.copyTo(destination.resolve(font.name.lowercase()), overwrite = true)
+    }
+}
+
+val generateWidgetFonts = tasks.register<WidgetFontResources>("generateWidgetFonts") {
+    val source = rootProject.layout.projectDirectory.dir("ui/compose/src/commonMain/composeResources/font")
+    fonts.from(source.file("Inter400.ttf"), source.file("Inter500.ttf"))
+    outputDirectory.set(layout.buildDirectory.dir("generated/widgetFonts"))
+}
+
 // 版本号同时用于 APK 文件名，唯一来源是 gradle.properties 的 koma.version。
 val komaVersionName: String = providers.gradleProperty("koma.version").orNull
     ?: error("gradle.properties 缺少 koma.version")
@@ -61,6 +83,7 @@ android {
 
 androidComponents {
     onVariants { variant ->
+        variant.sources.res?.addGeneratedSourceDirectory(generateWidgetFonts, WidgetFontResources::outputDirectory)
         variant.outputs.forEach { output ->
             val abi = output.filters.firstOrNull {
                 it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI
@@ -78,6 +101,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.core:core-ktx:1.19.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
 }
 
 tasks.register("verifyOcrModel") {

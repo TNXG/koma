@@ -17,12 +17,11 @@ import moe.tnxg.koma.domain.course.updateCourseNotes
 import moe.tnxg.koma.domain.model.Course
 import moe.tnxg.koma.domain.model.TimetableSnapshot
 import moe.tnxg.koma.platform.PlatformServices
+import moe.tnxg.koma.platform.TimetableSettings
 
 class TimetableSession(private val platform: PlatformServices) {
     private val json = Json { ignoreUnknownKeys = true }
-    var snapshot by mutableStateOf(platform.readSetting("koma.snapshot")?.let { raw ->
-        runCatching { json.decodeFromString<TimetableSnapshot>(raw) }.getOrNull()
-    })
+    var snapshot by mutableStateOf(TimetableSettings.decodeSnapshot(platform.readSetting(TimetableSettings.SNAPSHOT)))
         private set
     private var savedStates = platform.readSetting("koma.courseSync")?.let { raw ->
         runCatching { json.decodeFromString<List<CourseSyncState>>(raw) }.getOrNull()
@@ -34,7 +33,7 @@ class TimetableSession(private val platform: PlatformServices) {
     }
     var conflicts by mutableStateOf(state?.conflicts.orEmpty())
         private set
-    var startDate by mutableStateOf(platform.readSetting("koma.startDate")?.takeIf {
+    var startDate by mutableStateOf(platform.readSetting(TimetableSettings.START_DATE)?.takeIf {
         runCatching { LocalDate.parse(it) }.isSuccess
     }.orEmpty())
         private set
@@ -58,7 +57,7 @@ class TimetableSession(private val platform: PlatformServices) {
         }
         save(synchronizeCourses(target, next.copy(timeGrid = grid)))
         if (!sameTerm) {
-            platform.writeSetting("koma.startDate", null)
+            platform.writeSetting(TimetableSettings.START_DATE, null)
             startDate = ""
         }
     }
@@ -106,7 +105,7 @@ class TimetableSession(private val platform: PlatformServices) {
             it.snapshot.schoolId == next.snapshot.schoolId && it.snapshot.term == next.snapshot.term
         } + next
         platform.writeSetting("koma.courseSync", json.encodeToString(updated))
-        platform.writeSetting("koma.snapshot", json.encodeToString(next.snapshot))
+        platform.writeSetting(TimetableSettings.SNAPSHOT, json.encodeToString(next.snapshot))
         savedStates = updated
         state = next
         snapshot = next.snapshot
@@ -115,13 +114,13 @@ class TimetableSession(private val platform: PlatformServices) {
 
     fun confirm(iso: String) {
         LocalDate.parse(iso)
-        platform.writeSetting("koma.startDate", iso)
+        platform.writeSetting(TimetableSettings.START_DATE, iso)
         startDate = iso
     }
 
     fun clear() {
-        platform.writeSetting("koma.snapshot", null)
-        platform.writeSetting("koma.startDate", null)
+        platform.writeSetting(TimetableSettings.SNAPSHOT, null)
+        platform.writeSetting(TimetableSettings.START_DATE, null)
         platform.writeSetting("koma.courseSync", null)
         savedStates = emptyList()
         state = null

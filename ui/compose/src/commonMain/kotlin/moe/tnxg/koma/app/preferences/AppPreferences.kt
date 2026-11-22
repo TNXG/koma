@@ -31,11 +31,15 @@ data class AppPreferences(
 
 val LocalAppPreferences = staticCompositionLocalOf { AppPreferences() }
 
+const val APP_PREFERENCES_KEY = "koma.preferences"
+private val preferencesJson = Json { ignoreUnknownKeys = true; coerceInputValues = true }
+
+fun loadAppPreferences(read: (String) -> String?): AppPreferences = runCatching {
+    read(APP_PREFERENCES_KEY)?.let { preferencesJson.decodeFromString<AppPreferences>(it) }?.normalized()
+}.getOrNull() ?: AppPreferences()
+
 class PreferenceStore(read: (String) -> String?, private val write: (String, String?) -> Unit) {
-    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
-    var value by mutableStateOf(runCatching {
-        read("koma.preferences")?.let { json.decodeFromString<AppPreferences>(it) }?.normalized()
-    }.getOrNull() ?: AppPreferences())
+    var value by mutableStateOf(loadAppPreferences(read))
         private set
     var profileName by mutableStateOf(read("koma.profileName").orEmpty())
         private set
@@ -50,7 +54,7 @@ class PreferenceStore(read: (String) -> String?, private val write: (String, Str
 
     fun update(next: AppPreferences): Boolean = persist {
         val accepted = next.normalized()
-        write("koma.preferences", json.encodeToString(accepted))
+        write(APP_PREFERENCES_KEY, preferencesJson.encodeToString(accepted))
         value = accepted
     }
 
@@ -91,7 +95,7 @@ class PreferenceStore(read: (String) -> String?, private val write: (String, Str
     }
 
     fun reset(): Boolean = persist {
-        write("koma.preferences", null)
+        write(APP_PREFERENCES_KEY, null)
         value = AppPreferences()
     }
 

@@ -5,16 +5,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import moe.tnxg.koma.domain.visual.*
 import moe.tnxg.koma.ui.theme.KomaTheme
+import moe.tnxg.koma.ui.theme.courseTone
 
 @Composable
-internal fun courseTone(tone: CourseTone): Color {
-    val c=KomaTheme.colors
-    return when(tone) {
-        CourseTone.Blue->c.toneBlue; CourseTone.Amber->c.toneAmber; CourseTone.Rose->c.toneRose
-        CourseTone.Green->c.toneGreen; CourseTone.Violet->c.toneViolet
-        CourseTone.Orange->c.toneOrange; CourseTone.Teal->c.toneTeal
-    }
-}
+internal fun courseTone(tone: CourseTone): Color = KomaTheme.colors.courseTone(tone)
 internal fun courseIcon(icon: CourseIcon): KomaGlyph = when(icon) {
     CourseIcon.Translate->KomaGlyph.Translate; CourseIcon.Formula->KomaGlyph.Formula
     CourseIcon.Fitness->KomaGlyph.Fitness; CourseIcon.Code->KomaGlyph.Code

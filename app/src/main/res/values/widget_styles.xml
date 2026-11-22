@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="WidgetAgenda">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:fontFamily">@font/inter400</item>
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+    </style>
+
+    <style name="WidgetAgenda.Title">
+        <item name="android:fontFamily">@font/inter500</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="WidgetAgenda.Course">
+        <item name="android:fontFamily">@font/inter500</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="WidgetAgenda.Caption">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">?android:attr/textColorSecondary</item>
+    </style>
+</resources>

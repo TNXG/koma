@@ -30,9 +30,10 @@ fun formatDuration(minutes: Int): String {
 
 data class CourseTime(val course: Course, val start: Int?, val end: Int?)
 
-fun coursesOnDate(snapshot: TimetableSnapshot, startDate: String, date: LocalDate): List<CourseTime> {
-    val week = weekIndex(startDate, date)
-    val weekday = isoWeekday(date)
+fun coursesOnDate(snapshot: TimetableSnapshot, startDate: String, date: LocalDate): List<CourseTime> =
+    coursesOnWeekday(snapshot, weekIndex(startDate, date), isoWeekday(date))
+
+internal fun coursesOnWeekday(snapshot: TimetableSnapshot, week: Int, weekday: Int): List<CourseTime> {
     return snapshot.courses.filter { it.weekday == weekday && courseHeldOnWeek(it, week) }.sortedBy(Course::startPeriod).map { course ->
         CourseTime(course, snapshot.timeGrid.find { it.index == course.startPeriod }?.start,
             snapshot.timeGrid.find { it.index == course.endPeriod }?.end)

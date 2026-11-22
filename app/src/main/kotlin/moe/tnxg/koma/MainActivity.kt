@@ -28,6 +28,11 @@ class MainActivity : ComponentActivity(), NotificationPermissionHost, PhotoPicke
         setContent { KomaApp(remember { AndroidPlatformServices(this) }) }
     }
 
+    override fun onStart() {
+        super.onStart()
+        (application as KomaApplication).todayWidgets.refresh()
+    }
+
     override suspend fun requestNotificationPermission() = notificationPermission.request()
 
     override suspend fun pickPhotoUri(): Uri? = photoPicker.pickPhotoUri()

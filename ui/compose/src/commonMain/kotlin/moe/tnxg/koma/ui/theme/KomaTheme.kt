@@ -15,18 +15,22 @@ object KomaTheme {
         @Composable get() = LocalColors.current
 }
 
-@Composable
-fun KomaTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun komaColors(dark: Boolean, preference: AccentPreference): KomaColors {
     val base = if (dark) DarkColors else LightColors
-    val accent = when (LocalAppPreferences.current.accent) {
+    val accent = when (preference) {
         AccentPreference.Iris -> base.accent
         AccentPreference.Blue -> base.toneBlue
         AccentPreference.Green -> base.toneGreen
         AccentPreference.Rose -> base.toneRose
         AccentPreference.Amber -> base.toneAmber
     }
-    val colors = base.copy(accent = accent, accent2 = lerp(accent, base.surface, .3f),
+    return base.copy(accent = accent, accent2 = lerp(accent, base.surface, .3f),
         accentSoft = lerp(base.bg, accent, if (dark) .18f else .08f))
+}
+
+@Composable
+fun KomaTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+    val colors = komaColors(dark, LocalAppPreferences.current.accent)
     CompositionLocalProvider(LocalColors provides colors) {
         content()
     }
