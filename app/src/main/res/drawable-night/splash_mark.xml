@@ -1,0 +1,78 @@
+<!-- 系统 splash 图标（dark）：与 KomaSplash.SplashMark 逐块一致的 K，暗色调色板。
+     几何与 drawable/splash_mark.xml 完全相同；颜色是 DarkColors 经 komaColors() 派生后的值，
+     改主题色时两处要同步。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="144"
+    android:viewportHeight="144">
+    <!-- 光晕：accent 10% 径向渐隐 -->
+    <path android:pathData="M32.1,72A39.9,39.9,0,1,1,111.9,72A39.9,39.9,0,1,1,32.1,72Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="72"
+                android:centerY="72"
+                android:gradientRadius="39.9"
+                android:type="radial">
+                <item android:color="#1A7C8FF0" android:offset="0.0" />
+                <item android:color="#007C8FF0" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- 空白节次 Slot = accentSoft -->
+    <path
+        android:fillColor="#FF24283C"
+        android:pathData="M67.65,51H76.35A1.95,1.95,0,0,1,78.3,52.95V55.8A1.95,1.95,0,0,1,76.35,57.75H67.65A1.95,1.95,0,0,1,65.7,55.8V52.95A1.95,1.95,0,0,1,67.65,51Z" />
+    <path
+        android:fillColor="#FF24283C"
+        android:pathData="M67.65,59.85H76.35A1.95,1.95,0,0,1,78.3,61.8V64.65A1.95,1.95,0,0,1,76.35,66.6H67.65A1.95,1.95,0,0,1,65.7,64.65V61.8A1.95,1.95,0,0,1,67.65,59.85Z" />
+    <path
+        android:fillColor="#FF24283C"
+        android:pathData="M67.65,77.4H76.35A1.95,1.95,0,0,1,78.3,79.35V82.2A1.95,1.95,0,0,1,76.35,84.15H67.65A1.95,1.95,0,0,1,65.7,82.2V79.35A1.95,1.95,0,0,1,67.65,77.4Z" />
+    <path
+        android:fillColor="#FF24283C"
+        android:pathData="M67.65,86.25H76.35A1.95,1.95,0,0,1,78.3,88.2V91.05A1.95,1.95,0,0,1,76.35,93H67.65A1.95,1.95,0,0,1,65.7,91.05V88.2A1.95,1.95,0,0,1,67.65,86.25Z" />
+    <path
+        android:fillColor="#FF24283C"
+        android:pathData="M82.35,68.62H91.05A1.95,1.95,0,0,1,93,70.58V73.42A1.95,1.95,0,0,1,91.05,75.38H82.35A1.95,1.95,0,0,1,80.4,73.42V70.58A1.95,1.95,0,0,1,82.35,68.62Z" />
+    <!-- 主干 Stem = accent 垂直渐变 -->
+    <path android:pathData="M53.55,51H61.05A2.55,2.55,0,0,1,63.6,53.55V90.45A2.55,2.55,0,0,1,61.05,93H53.55A2.55,2.55,0,0,1,51,90.45V53.55A2.55,2.55,0,0,1,53.55,51Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="51"
+                android:startY="51"
+                android:endX="51"
+                android:endY="93"
+                android:type="linear">
+                <item android:color="#FF7C8FF0" android:offset="0.0" />
+                <item android:color="#FF5E6DB6" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Violet = toneViolet -->
+    <path
+        android:fillColor="#FFA99BEF"
+        android:pathData="M82.95,51H90.45A2.55,2.55,0,0,1,93,53.55V64.05A2.55,2.55,0,0,1,90.45,66.6H82.95A2.55,2.55,0,0,1,80.4,64.05V53.55A2.55,2.55,0,0,1,82.95,51Z" />
+    <!-- Middle = accent2 -->
+    <path
+        android:fillColor="#FF5F6DB2"
+        android:pathData="M67.65,68.62H76.35A1.95,1.95,0,0,1,78.3,70.58V73.42A1.95,1.95,0,0,1,76.35,75.38H67.65A1.95,1.95,0,0,1,65.7,73.42V70.58A1.95,1.95,0,0,1,67.65,68.62Z" />
+    <!-- Blue = toneBlue -->
+    <path
+        android:fillColor="#FF8FA4F0"
+        android:pathData="M82.95,77.4H90.45A2.55,2.55,0,0,1,93,79.95V90.45A2.55,2.55,0,0,1,90.45,93H82.95A2.55,2.55,0,0,1,80.4,90.45V79.95A2.55,2.55,0,0,1,82.95,77.4Z" />
+    <!-- 课程标题条 Bar = 白 85% -->
+    <path
+        android:fillAlpha="0.85"
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54.6,53.55H57.6A0.6,0.6,0,0,1,58.2,54.15V54.75A0.6,0.6,0,0,1,57.6,55.35H54.6A0.6,0.6,0,0,1,54,54.75V54.15A0.6,0.6,0,0,1,54.6,53.55Z" />
+    <path
+        android:fillAlpha="0.85"
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M84,53.55H86.4A0.6,0.6,0,0,1,87,54.15V54.75A0.6,0.6,0,0,1,86.4,55.35H84A0.6,0.6,0,0,1,83.4,54.75V54.15A0.6,0.6,0,0,1,84,53.55Z" />
+    <path
+        android:fillAlpha="0.85"
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M84,79.95H86.4A0.6,0.6,0,0,1,87,80.55V81.15A0.6,0.6,0,0,1,86.4,81.75H84A0.6,0.6,0,0,1,83.4,81.15V80.55A0.6,0.6,0,0,1,84,79.95Z" />
+</vector>
