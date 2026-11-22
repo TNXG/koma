@@ -77,11 +77,14 @@ private fun nextClassOffsets(snapshot: TimetableSnapshot, startWeekday: Int, aft
             if (week !in weeks) continue
             val candidate = (week - 1) * 7 + weekdayOffset
             if (candidate <= after || candidate >= nearest.last() || week in course.suspendedWeeks) continue
-            val result = nearest.binarySearch(candidate)
-            if (result >= 0) continue
-            val index = -result - 1
-            nearest.copyInto(nearest, index + 1, index, nearest.lastIndex)
-            nearest[index] = candidate
+            // OHOS 的 K/N stdlib 没有 IntArray.binarySearch，这里按同样的插入点语义手写。
+            var index = 0
+            while (index < limit && nearest[index] < candidate) index++
+            if (index < limit && nearest[index] == candidate) continue
+            if (index < limit) {
+                nearest.copyInto(nearest, index + 1, index, nearest.lastIndex)
+                nearest[index] = candidate
+            }
         }
     }
     return nearest

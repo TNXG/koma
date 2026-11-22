@@ -42,6 +42,7 @@ import moe.tnxg.koma.ui.component.media.downloadCoverBytes
 import moe.tnxg.koma.ui.component.page.SubpageScaffold
 import moe.tnxg.koma.ui.component.text.KomaText
 import moe.tnxg.koma.ui.theme.KomaTheme
+import moe.tnxg.koma.version.APP_PLATFORM
 import moe.tnxg.koma.version.APP_VERSION
 
 const val PROJECT_URL = "https://github.com/tnxg/koma"
@@ -165,7 +166,7 @@ private fun AboutHeroCard() {
                 .padding(vertical = 11.dp),
         ) {
             MetaCell(value = APP_VERSION, label = "版本", modifier = Modifier.weight(1f))
-            MetaCell(value = "Android", label = "平台", modifier = Modifier.weight(1f))
+            MetaCell(value = APP_PLATFORM, label = "平台", modifier = Modifier.weight(1f))
             MetaCell(value = AGREEMENT, label = "协议", modifier = Modifier.weight(1f))
         }
     }

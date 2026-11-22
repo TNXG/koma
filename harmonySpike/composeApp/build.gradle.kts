@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.net.URI
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -11,6 +12,31 @@ plugins {
 }
 
 val repoRoot = rootProject.projectDir.parentFile
+
+// 与 Android 端共用根目录 gradle.properties 的 koma.version，不在这里维护第二份版本号。
+val komaVersion: String = Properties().apply {
+    File(repoRoot, "gradle.properties").inputStream().use { load(it) }
+}.getProperty("koma.version") ?: error("gradle.properties 缺少 koma.version")
+
+val generateAppVersion = tasks.register("generateAppVersion") {
+    val version = komaVersion
+    val outputDir = layout.buildDirectory.dir("generated/appVersion/kotlin")
+    inputs.property("version", version)
+    outputs.dir(outputDir)
+    doLast {
+        val file = outputDir.get().file("moe/tnxg/koma/version/AppVersion.kt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            |// 由 :composeApp 的 generateAppVersion 生成，勿手改。
+            |// 来源：../gradle.properties 的 koma.version。
+            |package moe.tnxg.koma.version
+            |
+            |const val APP_VERSION: String = "$version"
+            |""".trimMargin() + "\n",
+        )
+    }
+}
 
 val prepareOcrModel by tasks.registering(Exec::class) {
     workingDir(repoRoot)
@@ -124,6 +150,7 @@ kotlin {
     }
 
     sourceSets["commonMain"].apply {
+        kotlin.srcDir(generateAppVersion)
         kotlin.srcDir("${repoRoot.absolutePath}/core/src/commonMain/kotlin")
         kotlin.srcDir("${repoRoot.absolutePath}/ui/compose/src/commonMain/kotlin")
         kotlin.srcDir(miuixSrc.get().dir("commonMain"))
