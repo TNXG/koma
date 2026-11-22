@@ -44,7 +44,7 @@
         <receiver
             android:name=".widget.TodayWidgetProvider"
             android:exported="false"
-            android:label="@string/widget_title_wide">
+            android:label="@string/widget_title_today">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -53,13 +53,13 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
             <meta-data
-                android:name="android.appwidget.provider"
+                android:name="android:appwidget.provider"
                 android:resource="@xml/today_widget_info" />
         </receiver>
         <receiver
             android:name=".widget.TallTodayWidgetProvider"
             android:exported="false"
-            android:label="@string/widget_title_tall">
+            android:label="@string/widget_title_agenda">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

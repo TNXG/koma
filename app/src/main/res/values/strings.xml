@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Koma</string>
-    <string name="widget_title_wide">课程 · 横版</string>
-    <string name="widget_title_tall">课程 · 竖版</string>
-    <string name="widget_description">在桌面查看最近的课程</string>
+    <string name="widget_title_today">今日课程</string>
+    <string name="widget_title_agenda">近期日程</string>
+    <string name="widget_description">专注查看今天与下一节课程</string>
+    <string name="widget_description_agenda">在桌面总览近几天的课程安排</string>
     <string name="widget_date">%1$s 周%2$s</string>
-    <string name="widget_tomorrow">明天 %s</string>
+    <string name="widget_today">今天 %1$s</string>
+    <string name="widget_today_full">今天 %1$s 周%2$s</string>
+    <string name="widget_tomorrow">明天 %1$s</string>
+    <string name="widget_tomorrow_full">明天 %1$s 周%2$s</string>
     <string name="widget_week">第%d周</string>
     <string name="widget_period">第 %d 节</string>
     <string name="widget_period_range">第 %1$d–%2$d 节</string>

@@ -4,6 +4,4 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:baselineAligned="false"
-    android:divider="@drawable/today_widget_day_gap"
-    android:orientation="horizontal"
-    android:showDividers="middle" />
+    android:orientation="horizontal" />

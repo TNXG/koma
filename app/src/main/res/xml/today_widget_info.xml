@@ -5,7 +5,7 @@
     android:previewImage="@drawable/today_widget_preview"
     android:minWidth="174dp"
     android:minHeight="108dp"
-    android:minResizeWidth="174dp"
+    android:minResizeWidth="110dp"
     android:minResizeHeight="108dp"
     android:targetCellWidth="3"
     android:targetCellHeight="2"

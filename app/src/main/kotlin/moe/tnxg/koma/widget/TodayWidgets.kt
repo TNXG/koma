@@ -85,7 +85,7 @@ internal class TodayWidgets(private val context: Context) : SharedPreferences.On
         val views = TodayWidgetViews(context, date, agenda, loadAppPreferences { settings.getString(it, null) }, open) { limit ->
             upcomingAgendas(snapshot, start, agenda.date, limit)
         }
-        for (id in wideIds) manager.updateAppWidget(id, views.forOptions(manager.getAppWidgetOptions(id), 174, 108))
-        for (id in tallIds) manager.updateAppWidget(id, views.forOptions(manager.getAppWidgetOptions(id), 110, 160))
+        for (id in wideIds) manager.updateAppWidget(id, views.forOptions(WidgetMode.Today, manager.getAppWidgetOptions(id), 174, 108))
+        for (id in tallIds) manager.updateAppWidget(id, views.forOptions(WidgetMode.Agenda, manager.getAppWidgetOptions(id), 110, 160))
     }
 }

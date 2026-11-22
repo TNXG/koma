@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:description="@string/widget_description"
+    android:description="@string/widget_description_agenda"
     android:initialLayout="@layout/today_widget"
     android:previewImage="@drawable/today_widget_preview_tall"
     android:minWidth="110dp"

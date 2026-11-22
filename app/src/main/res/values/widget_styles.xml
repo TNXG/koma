@@ -12,16 +12,37 @@
 
     <style name="WidgetAgenda.Title">
         <item name="android:fontFamily">@font/inter500</item>
-        <item name="android:textSize">11sp</item>
+        <item name="android:textSize">11.5sp</item>
     </style>
 
     <style name="WidgetAgenda.Course">
         <item name="android:fontFamily">@font/inter500</item>
-        <item name="android:textSize">13sp</item>
+        <item name="android:textSize">12.5sp</item>
+    </style>
+
+    <style name="WidgetAgenda.CourseWide">
+        <item name="android:fontFamily">@font/inter500</item>
+        <item name="android:textSize">13.5sp</item>
+    </style>
+
+    <style name="WidgetAgenda.Time">
+        <item name="android:fontFamily">@font/inter500</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="WidgetAgenda.Subtime">
+        <item name="android:fontFamily">@font/inter400</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:textColor">?android:attr/textColorSecondary</item>
     </style>
 
     <style name="WidgetAgenda.Caption">
-        <item name="android:textSize">10sp</item>
+        <item name="android:textSize">10.5sp</item>
         <item name="android:textColor">?android:attr/textColorSecondary</item>
+    </style>
+
+    <style name="WidgetAgenda.Overflow">
+        <item name="android:fontFamily">@font/inter500</item>
+        <item name="android:textSize">10.5sp</item>
     </style>
 </resources>

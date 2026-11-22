@@ -50,38 +50,47 @@ internal class TodayWidgetViews(
     }
     private val colors = komaColors(dark, prefs.accent)
     private val nightColors = if (dualTheme) komaColors(true, prefs.accent) else null
-    private enum class Overflow { None, Header, Footer }
-    private data class DayCell(val index: Int, val courses: Int, val overflow: Overflow)
 
     private val variants = mutableMapOf<List<List<DayCell>>, RemoteViews>()
     private var extraDays: List<TodayAgenda> = emptyList()
     private var requestedDays = 0
-    private val horizontalInsets = dimensionDp(R.dimen.widget_inset_start) + dimensionDp(R.dimen.widget_inset_end)
-    private val verticalInsets = 2 * dimensionDp(R.dimen.widget_inset_vertical)
-    private val dayGap = dimensionDp(R.dimen.widget_day_gap)
-    private val dayHeaderHeight = dimensionDp(R.dimen.widget_day_header_gap) + lineHeight(11)
-    private val rowHeight = maxOf(35, dimensionDp(R.dimen.widget_course_details_gap) + lineHeight(13) + lineHeight(10))
-    private val footerHeight = 1 + lineHeight(10)
 
-    fun forOptions(options: Bundle, defaultWidth: Int, defaultHeight: Int): RemoteViews {
+    private val metrics = WidgetMetrics(
+        horizontalInsets = 2 * dimensionDp(R.dimen.widget_inset_horizontal),
+        verticalInsets = 2 * dimensionDp(R.dimen.widget_inset_vertical),
+        dayGap = dimensionDp(R.dimen.widget_day_gap),
+        colGap = dimensionDp(R.dimen.widget_col_gap),
+        dayHeaderHeight = dimensionDp(R.dimen.widget_day_header_gap) + lineHeight(11.5f),
+        courseGap = dimensionDp(R.dimen.widget_course_gap),
+        compactRowHeight = maxOf(30, 3 + dimensionDp(R.dimen.widget_course_details_gap) + lineHeight(12.5f) + lineHeight(10.5f)),
+        wideRowHeight = maxOf(32, 3 + dimensionDp(R.dimen.widget_course_details_gap) + lineHeight(13.5f) + lineHeight(10.5f)),
+        footerHeight = 3 + lineHeight(10.5f),
+    )
+
+    fun forOptions(mode: WidgetMode, options: Bundle, defaultWidth: Int, defaultHeight: Int): RemoteViews {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val sizes = BundleCompat.getParcelableArrayList(options, AppWidgetManager.OPTION_APPWIDGET_SIZES, SizeF::class.java)
             if (!sizes.isNullOrEmpty() && sizes.size <= 16) {
-                return RemoteViews(sizes.associateWith { forSize(it.width.toInt(), it.height.toInt(), defaultHeight) })
+                return RemoteViews(sizes.associateWith { forSize(mode, it.width.toInt(), it.height.toInt()) })
             }
         }
-        val landscape = forSize(options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, defaultWidth),
-            options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, defaultHeight), defaultHeight)
-        val portrait = forSize(options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, defaultWidth),
-            options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, defaultHeight), defaultHeight)
+        val landscape = forSize(
+            mode,
+            options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, defaultWidth),
+            options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, defaultHeight),
+        )
+        val portrait = forSize(
+            mode,
+            options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, defaultWidth),
+            options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, defaultHeight),
+        )
         return if (landscape === portrait) portrait else RemoteViews(landscape, portrait)
     }
 
-    private fun lineHeight(sp: Int): Int {
-        val metrics = context.resources.displayMetrics
-        val px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp.toFloat(), metrics)
-        // CJK fallback fonts can produce taller lines than Inter's Latin metrics.
-        return ceil(px * 1.45f / metrics.density).toInt()
+    private fun lineHeight(sp: Float): Int {
+        val displayMetrics = context.resources.displayMetrics
+        val px = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp, displayMetrics)
+        return ceil(px * 1.15f / displayMetrics.density).toInt()
     }
 
     private fun dimensionDp(id: Int): Int =
@@ -89,60 +98,30 @@ internal class TodayWidgetViews(
 
     private fun dayAt(index: Int): TodayAgenda = if (index == 0) agenda else extraDays[index - 1]
 
-    private fun forSize(width: Int, height: Int, defaultHeight: Int): RemoteViews {
-        val contentWidth = width - horizontalInsets
-        val contentHeight = height - verticalInsets
-        val minCellWidth = maxOf(104, lineHeight(11) * 6)
-        val columns = ((contentWidth + dayGap) / (minCellWidth + dayGap)).coerceIn(1, 4)
-        val minBandHeight = dayHeaderHeight + rowHeight
-        val defaultRows = ((defaultHeight - verticalInsets - dayHeaderHeight) / rowHeight).coerceAtLeast(1)
-        val firstBandHeight = dayHeaderHeight + rowHeight * minOf(defaultRows, agenda.courses.size.coerceAtLeast(1))
-        val bands = if (height < defaultHeight + rowHeight + dayGap) 1
-        else (1 + (contentHeight - firstBandHeight).coerceAtLeast(0) / (minBandHeight + dayGap)).coerceAtMost(6)
-        val limit = if (agenda.courses.isEmpty()) 0 else columns * bands - 1
+    private fun forSize(mode: WidgetMode, width: Int, height: Int): RemoteViews {
+        val limit = if (agenda.courses.isEmpty()) 0 else TodayWidgetLayout.maxExtraDays(mode, width, metrics)
         if (limit > requestedDays && (requestedDays == 0 || extraDays.size == requestedDays)) {
             extraDays = loadMoreDays(limit)
             requestedDays = limit
         }
         val dayCount = 1 + minOf(limit, extraDays.size)
-        val groups = (0 until dayCount).chunked(columns)
-        var remaining = contentHeight - dayGap * (groups.size - 1)
-        val plan = groups.mapIndexed { groupIndex, group ->
-            // Keep one row for every later date before spending extra space on busier days.
-            val later = (groups.lastIndex - groupIndex) * minBandHeight
-            val demand = dayHeaderHeight + rowHeight * group.maxOf { dayAt(it).courses.size.coerceAtMost(8) }
-            val bandHeight = minOf(demand, (remaining - later).coerceAtLeast(minBandHeight))
-            val budget = if (groups.size == 1) contentHeight else bandHeight
-            remaining -= budget
-            val cellWidth = (contentWidth - dayGap * (group.size - 1)) / group.size
-            group.map { dayCell(it, cellWidth, budget) }
-        }
+        val plan = TodayWidgetLayout.plan(
+            mode = mode,
+            width = width,
+            height = height,
+            metrics = metrics,
+            dayCount = dayCount,
+            courseCount = { dayAt(it).courses.size },
+            weekOf = { dayAt(it).week },
+        )
         return variants.getOrPut(plan) { render(plan) }
-    }
-
-    private fun dayCell(index: Int, width: Int, height: Int): DayCell {
-        val total = dayAt(index).courses.size
-        val room = height - dayHeaderHeight
-        val withoutFooter = (room / rowHeight).coerceIn(1, 8)
-        val overflow = when {
-            total <= withoutFooter -> Overflow.None
-            width >= maxOf(150, lineHeight(11) * 9) -> Overflow.Header
-            room >= rowHeight + footerHeight -> Overflow.Footer
-            else -> Overflow.None
-        }
-        val rows = if (overflow == Overflow.Footer) ((room - footerHeight) / rowHeight).coerceIn(1, 8) else withoutFooter
-        return DayCell(index, minOf(total, rows), overflow)
     }
 
     private fun render(plan: List<List<DayCell>>): RemoteViews =
         RemoteViews(context.packageName, R.layout.today_widget).apply {
             setOnClickPendingIntent(android.R.id.background, openApp)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val surface = ColorStateList.valueOf(colors.surface.toArgb())
-                val night = nightColors
-                if (night == null) setColorStateList(android.R.id.background, "setBackgroundTintList", surface)
-                else setColorStateList(android.R.id.background, "setBackgroundTintList", surface,
-                    ColorStateList.valueOf(night.surface.toArgb()))
+                paintTint(android.R.id.background, "setBackgroundTintList") { it.surface }
             } else {
                 paint(R.id.widget_panel, "setBackgroundColor") { it.surface }
             }
@@ -153,9 +132,11 @@ internal class TodayWidgetViews(
             if (single) {
                 bindDay(plan.first().first())
             } else {
-                for (band in plan) {
+                plan.forEachIndexed { bandIndex, band ->
+                    if (bandIndex > 0) addView(R.id.widget_day_grid, dividerView(R.layout.today_widget_divider_h))
                     val row = RemoteViews(context.packageName, R.layout.today_widget_day_band)
-                    for (cell in band) {
+                    band.forEachIndexed { colIndex, cell ->
+                        if (colIndex > 0) row.addView(R.id.widget_day_band, dividerView(R.layout.today_widget_divider_v))
                         val day = RemoteViews(context.packageName, R.layout.today_widget_day).apply { bindDay(cell) }
                         row.addView(R.id.widget_day_band, day)
                     }
@@ -164,66 +145,124 @@ internal class TodayWidgetViews(
             }
         }
 
+    private fun dividerView(layoutId: Int): RemoteViews =
+        RemoteViews(context.packageName, layoutId).apply { paintImage(R.id.widget_divider) { it.line } }
+
     private fun RemoteViews.bindDay(cell: DayCell) {
         val day = dayAt(cell.index)
-        val (_, capacity, overflow) = cell
-        val date = day.date
-        val monthDay = "${date.month.number}/${date.day}"
-        text(R.id.widget_date, if (date == addDays(today, 1)) context.getString(R.string.widget_tomorrow, monthDay)
-        else context.getString(R.string.widget_date, monthDay, weekdayLabel(date)))
-        ink(R.id.widget_date) { it.ink }
-        text(R.id.widget_week, day.week?.let { context.getString(R.string.widget_week, it) })
-        ink(R.id.widget_week) { it.accent }
-        val more = if (overflow != Overflow.None) context.getString(R.string.widget_overflow, day.courses.size - capacity) else null
-        text(R.id.widget_header_overflow, more.takeIf { overflow == Overflow.Header })
-        ink(R.id.widget_header_overflow) { it.ink2 }
-        setViewVisibility(R.id.widget_rows, if (capacity > 0) View.VISIBLE else View.GONE)
-        removeAllViews(R.id.widget_rows)
-        for (entry in day.visibleCourses(capacity)) addView(R.id.widget_rows, courseRow(entry))
-        text(R.id.widget_overflow, more.takeIf { overflow == Overflow.Footer })
-        ink(R.id.widget_overflow) { it.ink2 }
-        setViewVisibility(R.id.widget_empty, if (capacity == 0) View.VISIBLE else View.GONE)
-        if (capacity == 0) {
-            val message = when (day.state) {
-                AgendaState.NoTimetable -> R.string.widget_no_timetable
-                AgendaState.NeedsStart -> R.string.widget_needs_start
-                AgendaState.BeforeTerm -> R.string.widget_before_term
-                AgendaState.AfterTerm -> R.string.widget_after_term
-                else -> R.string.widget_no_classes
-            }
-            val hint = when (day.state) {
-                AgendaState.NoTimetable -> R.string.widget_import_hint
-                AgendaState.NeedsStart -> R.string.widget_start_hint
-                else -> null
-            }
-            text(R.id.widget_message, context.getString(message))
-            ink(R.id.widget_message) { it.ink }
-            text(R.id.widget_hint, hint?.let { context.getString(it) })
-            ink(R.id.widget_hint) { it.ink2 }
+        val isToday = day.date == today
+        val isTomorrow = day.date == addDays(today, 1)
+        val monthDay = "${day.date.month.number}/${day.date.day}"
+        val dateText = when {
+            isToday && cell.fullDate -> context.getString(R.string.widget_today_full, monthDay, weekdayLabel(day.date))
+            isToday -> context.getString(R.string.widget_today, monthDay)
+            isTomorrow && cell.fullDate -> context.getString(R.string.widget_tomorrow_full, monthDay, weekdayLabel(day.date))
+            isTomorrow -> context.getString(R.string.widget_tomorrow, monthDay)
+            else -> context.getString(R.string.widget_date, monthDay, weekdayLabel(day.date))
         }
+        text(R.id.widget_date, dateText)
+        ink(R.id.widget_date) { if (isToday) it.accent else it.ink }
+
+        text(R.id.widget_week, day.week.takeIf { cell.showWeek }?.let { context.getString(R.string.widget_week, it) })
+        ink(R.id.widget_week) { it.ink3 }
+
+        val hidden = (day.courses.size - cell.capacity).coerceAtLeast(0)
+        val overflowText = if (hidden > 0) context.getString(R.string.widget_overflow, hidden) else null
+        text(R.id.widget_header_overflow, overflowText.takeIf { cell.overflow == OverflowSlot.Header })
+        ink(R.id.widget_header_overflow) { it.ink2 }
+
+        setViewVisibility(R.id.widget_rows, if (cell.capacity > 0) View.VISIBLE else View.GONE)
+        removeAllViews(R.id.widget_rows)
+        val visible = day.visibleCourses(cell.capacity)
+        val focusTarget = if (cell.highlightFocus && isToday) {
+            visible.firstOrNull { it.state == ClassState.Current } ?: visible.firstOrNull { it.state == ClassState.Next }
+        } else null
+        for (entry in visible) {
+            addView(R.id.widget_rows, courseRow(entry, cell.wideRow, entry === focusTarget))
+        }
+        text(R.id.widget_overflow, overflowText.takeIf { cell.overflow == OverflowSlot.Footer })
+        ink(R.id.widget_overflow) { it.ink3 }
+
+        setViewVisibility(R.id.widget_empty, if (cell.capacity == 0) View.VISIBLE else View.GONE)
+        if (cell.capacity == 0) bindEmpty(day.state)
     }
 
-    private fun courseRow(entry: AgendaCourse): RemoteViews {
+    private fun RemoteViews.bindEmpty(state: AgendaState) {
+        val message = when (state) {
+            AgendaState.NoTimetable -> R.string.widget_no_timetable
+            AgendaState.NeedsStart -> R.string.widget_needs_start
+            AgendaState.BeforeTerm -> R.string.widget_before_term
+            AgendaState.AfterTerm -> R.string.widget_after_term
+            else -> R.string.widget_no_classes
+        }
+        val hint = when (state) {
+            AgendaState.NoTimetable -> R.string.widget_import_hint
+            AgendaState.NeedsStart -> R.string.widget_start_hint
+            else -> null
+        }
+        text(R.id.widget_message, context.getString(message))
+        ink(R.id.widget_message) { it.ink }
+        text(R.id.widget_hint, hint?.let { context.getString(it) })
+        ink(R.id.widget_hint) { it.ink2 }
+    }
+
+    private fun courseRow(entry: AgendaCourse, wideRow: Boolean, highlighted: Boolean): RemoteViews {
         val (time, state) = entry
-        val (course, start) = time
+        val (course, start, end) = time
+        val periodLabel = if (course.startPeriod == course.endPeriod) {
+            context.getString(R.string.widget_period, course.startPeriod)
+        } else {
+            context.getString(R.string.widget_period_range, course.startPeriod, course.endPeriod)
+        }
         val clock = when {
             state == ClassState.Current -> context.getString(R.string.widget_class_now)
             state == ClassState.Finished -> context.getString(R.string.widget_class_finished)
             start != null -> formatTime(start)
-            course.startPeriod == course.endPeriod -> context.getString(R.string.widget_period, course.startPeriod)
-            else -> context.getString(R.string.widget_period_range, course.startPeriod, course.endPeriod)
+            else -> periodLabel
         }
         val room = if (prefs.showRoom) course.location?.trim()?.takeIf(String::isNotEmpty) else null
-        val details = if (room != null) "$clock · $room" else clock
         val tone = if (prefs.colorCourses) courseVisual(course.name).tone else null
-        return RemoteViews(context.packageName, R.layout.today_widget_course).apply {
-            paint(R.id.widget_course_mark, "setBackgroundColor") {
+        val layoutId = if (wideRow) R.layout.today_widget_course_wide else R.layout.today_widget_course
+
+        return RemoteViews(context.packageName, layoutId).apply {
+            if (highlighted) {
+                val activeBg = when {
+                    dualTheme -> R.drawable.today_widget_row_active
+                    dark -> R.drawable.today_widget_row_active_dark
+                    else -> R.drawable.today_widget_row_active_light
+                }
+                setInt(R.id.widget_course_root, "setBackgroundResource", activeBg)
+            }
+            paintImage(R.id.widget_course_mark) {
                 if (state == ClassState.Finished) it.line else if (tone != null) it.courseTone(tone) else it.accent
             }
             text(R.id.widget_course_name, course.name)
-            ink(R.id.widget_course_name) { if (state == ClassState.Finished) it.ink2 else it.ink }
-            text(R.id.widget_course_details, details)
-            ink(R.id.widget_course_details) { if (state == ClassState.Current) it.accent else it.ink2 }
+            ink(R.id.widget_course_name) { if (state == ClassState.Finished) it.ink3 else it.ink }
+
+            if (wideRow) {
+                text(R.id.widget_course_details, room ?: periodLabel)
+                ink(R.id.widget_course_details) { it.ink2 }
+                text(R.id.widget_course_time, clock)
+                ink(R.id.widget_course_time) {
+                    when (state) {
+                        ClassState.Current -> it.accent
+                        ClassState.Finished -> it.ink3
+                        else -> it.ink
+                    }
+                }
+                val subtime = when {
+                    state == ClassState.Current && end != null -> formatTime(end)
+                    start != null && end != null -> formatTime(end)
+                    room != null && start != null -> periodLabel
+                    else -> null
+                }
+                text(R.id.widget_course_subtime, subtime)
+                ink(R.id.widget_course_subtime) { it.ink3 }
+            } else {
+                val details = if (room != null) "$clock · $room" else clock
+                text(R.id.widget_course_details, details)
+                ink(R.id.widget_course_details) { if (state == ClassState.Current) it.accent else it.ink2 }
+            }
         }
     }
 
@@ -233,6 +272,24 @@ internal class TodayWidgetViews(
     }
 
     private inline fun RemoteViews.ink(id: Int, pick: (KomaColors) -> Color) = paint(id, "setTextColor", pick)
+
+    private inline fun RemoteViews.paintImage(id: Int, pick: (KomaColors) -> Color) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            paintTint(id, "setImageTintList", pick)
+        } else {
+            setInt(id, "setColorFilter", pick(colors).toArgb())
+        }
+    }
+
+    private inline fun RemoteViews.paintTint(id: Int, method: String, pick: (KomaColors) -> Color) {
+        val normal = ColorStateList.valueOf(pick(colors).toArgb())
+        val night = nightColors
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && night != null) {
+            setColorStateList(id, method, normal, ColorStateList.valueOf(pick(night).toArgb()))
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            setColorStateList(id, method, normal)
+        }
+    }
 
     private inline fun RemoteViews.paint(id: Int, method: String, pick: (KomaColors) -> Color) {
         val normal = pick(colors).toArgb()
