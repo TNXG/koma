@@ -13,6 +13,78 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  hap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.9.1"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # 社区镜像（kgbook/HarmonyOSCommandLineTools）提供 6.x linux-x64 CLT：
+      # 华为云官方镜像只到 5.1.0，官网 6.x 无稳定直链。哈希 pin 自 release 页声明。
+      - name: Fetch HarmonyOS command line tools
+        run: |
+          set -euo pipefail
+          clt="$RUNNER_TEMP/clt.tar.gz"
+          curl -fL --retry 3 -o "$clt" \
+            https://github.com/kgbook/HarmonyOSCommandLineTools/releases/download/6.1.1.280/command-line-tools.tar.gz
+          echo "7c5dca0221b1fde7e2396bc00e18c791b9c1c50eb1756943fe3881429554f3fe  $clt" | sha256sum -c -
+          mkdir -p .tools/ohos
+          tar -xzf "$clt" -C .tools/ohos
+          rm -f "$clt"
+          # tar 布局是 command-line-tools/...；setup 脚本按相对布局工作
+          ls .tools/ohos/command-line-tools
+
+      - name: Repair toolchain permissions
+        run: tools/setup-harmony.sh
+
+      - name: Fetch OCR model
+        run: tools/fetch-ocr-model.sh
+
+      # publishDebugBinariesToHarmonyApp：K/N 交叉编译 libkn.so 并连同 compose 资源、OCR 模型发布进壳工程
+      - name: Publish Kotlin/Native binaries
+        working-directory: harmonySpike
+        run: sh gradlew publishDebugBinariesToHarmonyApp --no-daemon
+
+      - name: Install ArkTS dependencies
+        working-directory: harmonySpike/harmonyApp
+        env:
+          HOS_CLT: ${{ github.workspace }}/.tools/ohos/command-line-tools
+        run: |
+          export PATH="$HOS_CLT/bin:$PATH"
+          ohpm install --all
+
+      # CI 无本地签名材料：剥离 machine-local 的 signingConfigs，产出未签名 HAP
+      - name: Strip machine-local signing config
+        run: python3 tools/strip-hap-signing.py harmonySpike/harmonyApp/build-profile.json5
+
+      - name: Assemble HAP
+        working-directory: harmonySpike/harmonyApp
+        env:
+          HOS_CLT: ${{ github.workspace }}/.tools/ohos/command-line-tools
+        run: |
+          export PATH="$HOS_CLT/bin:$HOS_CLT/tool/node/bin:$PATH"
+          export DEVECO_NODE_HOME="$HOS_CLT/tool/node"
+          hvigorw assembleHap --mode module -p product=default -p buildMode=debug --no-daemon
+          ls -l entry/build/default/outputs/default/*.hap
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: koma-hap
+          path: harmonySpike/harmonyApp/entry/build/default/outputs/default/*.hap
+          if-no-files-found: error
+
   apk:
     runs-on: ubuntu-latest
     steps:
